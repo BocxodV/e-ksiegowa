@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>e-Ksiegowa Pro</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  </head>
+  <body>
+    <div class="tabs">
+      <div class="tab active" onclick="openTab('shift')" id="tab_shift">
+        💼 Смена
+      </div>
+      <div class="tab" onclick="openTab('reports')" id="tab_reports">
+        📊 Отчеты
+      </div>
+      <div class="tab" onclick="openTab('settings')" id="tab_settings">
+        ⚙️ Настройки
+      </div>
+    </div>
+
+    <div id="shift" class="content active">
+      <div class="section-title" id="t_work_data">Данные о работе</div>
+      <div class="block">
+        <div class="input-row">
+          <label id="l_date">📅 Дата</label><input type="date" id="dateInput" />
+        </div>
+        <div class="input-row">
+          <label id="l_status">📌 Статус</label>
+          <select id="statusInput">
+            <option value="Work" id="opt_work">💼 Работа</option>
+            <option value="L4" id="opt_l4">💊 Больничный (L4)</option>
+            <option value="Urlop" id="opt_urlop">🌴 Отпуск</option>
+          </select>
+        </div>
+        <div class="input-row" id="endDateRow" style="display: none">
+          <label id="l_end_date">🏁 По (включительно)</label>
+          <input type="date" id="endDateInput" />
+        </div>
+        <div class="input-row">
+          <label id="l_object">📍 Объект / Город</label>
+          <input type="text" id="objectInput" placeholder="Любой текст" />
+        </div>
+        <div class="input-row">
+          <label id="l_abroad">🌍 Заграница (EUR)</label>
+          <div class="checkbox-wrapper">
+            <input type="checkbox" id="abroadInput" />
+          </div>
+        </div>
+        <div class="input-row">
+          <label id="l_diet">🥪 Командировка (Диета)</label>
+          <div class="checkbox-wrapper">
+            <input type="checkbox" id="dietInput" />
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title" id="t_logistics">Логистика и Часы</div>
+      <div class="block">
+        <div class="input-row">
+          <label id="l_car">🚛 Авто</label>
+          <input type="text" id="carInput" placeholder="VW Passat B6" />
+        </div>
+        <div class="input-row">
+          <label id="l_route">🛣 Маршрут</label>
+          <input type="text" id="routeInput" placeholder="Откуда - Куда" />
+        </div>
+        <div
+          class="input-row"
+          style="border-top: 1px solid rgba(118, 118, 128, 0.15)"
+        >
+          <label id="l_hours">⏱ На объекте (ч)</label>
+          <input type="number" id="hoursInput" step="0.5" placeholder="0" />
+        </div>
+        <div class="input-row">
+          <label id="l_drive">🚗 За рулем (ч)</label>
+          <input type="number" id="driveInput" step="0.5" placeholder="0" />
+        </div>
+      </div>
+      <button class="btn-main" onclick="sendShift()" id="btn_send_shift">
+        Отправить отчет
+      </button>
+    </div>
+
+    <div id="reports" class="content">
+      <div class="section-title" id="t_progress">🎯 Прогресс за месяц</div>
+      <div class="block" style="padding: 16px">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+          "
+        >
+          <strong id="goalNameDisplay" style="font-size: 16px">Моя цель</strong>
+          <span
+            id="goalTextDisplay"
+            style="color: var(--hint-color); font-size: 14px"
+            >0 / 8600 zł</span
+          >
+        </div>
+        <div
+          style="
+            background: rgba(118, 118, 128, 0.12);
+            border-radius: 8px;
+            height: 16px;
+            overflow: hidden;
+            position: relative;
+          "
+        >
+          <div
+            id="goalProgressBar"
+            style="
+              background: linear-gradient(90deg, #ff9500, #34c759);
+              width: 0%;
+              height: 100%;
+              transition: width 1s ease-in-out;
+            "
+          ></div>
+        </div>
+        <div
+          id="goalMotivation"
+          style="
+            text-align: center;
+            font-size: 13px;
+            color: var(--hint-color);
+            margin-top: 10px;
+          "
+        >
+          Загружаем данные...
+        </div>
+      </div>
+
+      <div class="section-title" id="t_audit">📊 Интерактивный аудит ЗП</div>
+      <div class="block">
+        <div class="input-row">
+          <label id="l_month_audit">📅 Месяц</label
+          ><input type="month" id="auditMonth" />
+        </div>
+        <div class="input-row">
+          <label id="l_card">💰 Пришло на карту</label>
+          <input type="number" id="cardAmount" placeholder="Сумма в zł" />
+        </div>
+        <button
+          class="btn-main"
+          onclick="sendAuditReq()"
+          id="btn_audit"
+          style="
+            margin-top: 10px;
+            background-color: #34c759;
+            margin-bottom: 10px;
+          "
+        >
+          Посчитать конверт
+        </button>
+      </div>
+
+      <div class="section-title" id="t_history">
+        📜 История и редактирование
+      </div>
+      <div class="block">
+        <div class="input-row">
+          <label id="l_month_history">Выбери месяц</label
+          ><input type="month" id="historyMonth" />
+        </div>
+        <button
+          class="btn-main"
+          onclick="sendHistoryReq()"
+          id="btn_history"
+          style="
+            background-color: #ff9500;
+            margin-top: 10px;
+            margin-bottom: 10px;
+          "
+        >
+          Показать смены
+        </button>
+      </div>
+
+      <div class="section-title" id="t_export">📥 Экспорт Excel</div>
+      <div class="block">
+        <div class="input-row">
+          <label id="l_month_export">Выбери месяц</label
+          ><input type="month" id="reportMonth" />
+        </div>
+      </div>
+      <button class="btn-main" onclick="sendReportReq()" id="btn_export">
+        Прислать Excel в чат
+      </button>
+    </div>
+
+    <div id="settings" class="content">
+      <div class="section-title" id="t_lang">Язык интерфейса</div>
+      <div class="block">
+        <div class="input-row">
+          <label id="l_lang_select">🌐 Язык</label>
+          <select id="langInput" onchange="changeLanguage()">
+            <option value="PL">🇵🇱 Polski</option>
+            <option value="RUS">🇷🇺 Русский</option>
+            <option value="UKR">🇺🇦 Українська</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section-title" id="t_goal">🎯 Моя финансовая цель</div>
+      <div class="block">
+        <div class="input-row">
+          <label id="l_goal_name">Название</label
+          ><input type="text" id="goalNameInput" placeholder="Дом у моря" />
+        </div>
+        <div class="input-row">
+          <label id="l_goal_sum">Сумма (zł)</label
+          ><input type="number" id="goalTargetInput" placeholder="8000" />
+        </div>
+      </div>
+
+      <div class="section-title" id="t_profile">Финансовый профиль (Ставки)</div>
+      <div class="block">
+        <div class="input-row">
+          <label id="l_brutto">💵 Brutto (zł/h)</label>
+          <input type="number" id="baseRateInput" placeholder="0.0" step="0.1" />
+        </div>
+        <div class="input-row">
+          <label id="l_env">✉️ Конверт (zł/h)</label>
+          <input type="number" id="extraRateInput" placeholder="0.0" step="0.1" />
+        </div>
+        <div class="input-row">
+          <label id="l_rate_eur">💶 Ставка (EUR/h)</label>
+          <input type="number" id="eurRateInput" placeholder="0.0" step="0.1" />
+        </div>
+        <div class="input-row">
+          <label id="l_drive_zl">🚗 Руль (zł/h)</label>
+          <input type="number" id="driveRateInput" placeholder="0.0" step="0.1" />
+        </div>
+        <div class="input-row">
+          <label id="l_drive_eur">🚙 Руль (EUR/h)</label>
+          <input type="number" id="driveEurRateInput" placeholder="0.0" step="0.1" />
+        </div>
+      </div>
+      <button class="btn-main" onclick="sendSettings()" id="btn_save_settings">Сохранить изменения</button>
+    </div>
+      <button class="btn-main" onclick="sendSettings()" id="btn_save_settings">
+        Сохранить изменения
+      </button>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
