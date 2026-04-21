@@ -62,23 +62,23 @@
       <div class="section-title" id="t_logistics">Логистика и Часы</div>
       <div class="block">
         <div class="input-row">
-          <label id="l_car">🚛 Авто</label>
-          <input type="text" id="carInput" placeholder="VW Passat B6" />
-        </div>
-        <div class="input-row">
-          <label id="l_route">🛣 Маршрут</label>
-          <input type="text" id="routeInput" placeholder="Откуда - Куда" />
-        </div>
-        <div
-          class="input-row"
-          style="border-top: 1px solid rgba(118, 118, 128, 0.15)"
-        >
           <label id="l_hours">⏱ На объекте (ч)</label>
           <input type="number" id="hoursInput" step="0.5" placeholder="0" />
         </div>
         <div class="input-row">
           <label id="l_drive">🚗 За рулем (ч)</label>
           <input type="number" id="driveInput" step="0.5" placeholder="0" />
+        </div>
+        <div
+          class="input-row"
+          style="border-top: 1px solid rgba(118, 118, 128, 0.15)"
+        >
+          <label id="l_car">🚛 Авто</label>
+          <input type="text" id="carInput" placeholder="VW Passat B6" />
+        </div>
+        <div class="input-row">
+          <label id="l_route">🛣 Маршрут</label>
+          <input type="text" id="routeInput" placeholder="Откуда - Куда" />
         </div>
       </div>
       <button class="btn-main" onclick="sendShift()" id="btn_send_shift">
@@ -218,15 +218,27 @@
         </div>
       </div>
 
-      <div class="section-title" id="t_profile">Финансовый профиль (Ставки)</div>
+      <div class="section-title" id="t_profile">
+        Финансовый профиль (Ставки)
+      </div>
       <div class="block">
         <div class="input-row">
           <label id="l_brutto">💵 Brutto (zł/h)</label>
-          <input type="number" id="baseRateInput" placeholder="0.0" step="0.1" />
+          <input
+            type="number"
+            id="baseRateInput"
+            placeholder="0.0"
+            step="0.1"
+          />
         </div>
         <div class="input-row">
           <label id="l_env">✉️ Конверт (zł/h)</label>
-          <input type="number" id="extraRateInput" placeholder="0.0" step="0.1" />
+          <input
+            type="number"
+            id="extraRateInput"
+            placeholder="0.0"
+            step="0.1"
+          />
         </div>
         <div class="input-row">
           <label id="l_rate_eur">💶 Ставка (EUR/h)</label>
@@ -234,15 +246,28 @@
         </div>
         <div class="input-row">
           <label id="l_drive_zl">🚗 Руль (zł/h)</label>
-          <input type="number" id="driveRateInput" placeholder="0.0" step="0.1" />
+          <input
+            type="number"
+            id="driveRateInput"
+            placeholder="0.0"
+            step="0.1"
+          />
         </div>
         <div class="input-row">
           <label id="l_drive_eur">🚙 Руль (EUR/h)</label>
-          <input type="number" id="driveEurRateInput" placeholder="0.0" step="0.1" />
+          <input
+            type="number"
+            id="driveEurRateInput"
+            placeholder="0.0"
+            step="0.1"
+          />
         </div>
       </div>
-      
-      <button class="btn-main" onclick="sendSettings()" id="btn_save_settings">Сохранить изменения</button>
-    </div> <script src="script.js"></script>
+
+      <button class="btn-main" onclick="sendSettings()" id="btn_save_settings">
+        Сохранить изменения
+      </button>
+    </div>
+    <script src="script.js"></script>
   </body>
 </html>
