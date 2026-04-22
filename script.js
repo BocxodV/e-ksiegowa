@@ -174,11 +174,12 @@ function sendShift() {
     is_trip: document.getElementById("dietInput").checked,
   };
 
-  // --- ИСПРАВЛЕНИЕ: ЛОГИКА ДЛЯ ДАЛЬНОБОЙЩИКОВ ---
+  // --- ИСПРАВЛЕНИЕ: ЛОГИКА ДЛЯ ВОЖДЕНИЯ ---
   let h = parseFloat(data.hours) || 0;
   let d = parseFloat(data.drive) || 0;
+  let hasRoute = data.route && data.route.includes("-");
   
-  if (data.status === "Work" && h <= 0 && d <= 0) {
+  if (data.status === "Work" && h <= 0 && d <= 0 && !hasRoute) {
     return tg.showAlert(TRANSLATIONS[currentLang].alert_hours);
   }
   // ----------------------------------------------
