@@ -19,7 +19,7 @@ const TRANSLATIONS = {
     t_export: "📥 Экспорт Excel", l_month_export: "Выбери месяц", btn_export: "Прислать Excel в чат",
     t_lang: "Язык интерфейса", l_lang_select: "🌐 Язык", t_goal: "🎯 Моя финансовая цель", l_goal_name: "Название",
     l_goal_sum: "Сумма (zł)", t_profile: "Финансовый профиль (Ставки)", btn_save_settings: "Сохранить изменения",
-    alert_hours: "⚠️ Укажи отработанные часы!", alert_audit: "⚠️ Выбери месяц и введи сумму!", alert_history: "⚠️ Выбери месяц для просмотра истории!",
+    alert_hours: "⚠️ Укажи часы работы ИЛИ за рулем!", alert_audit: "⚠️ Выбери месяц и введи сумму!", alert_history: "⚠️ Выбери месяц для просмотра истории!",
     mot_start: "Начало положено! 🚀 Запиши пару смен.", mot_good: "Отличный старт! Двигаемся дальше. 💼", mot_fast: "Хороший темп! Копилка пополняется. 🔥", mot_close: "Уже близко! Поднажми! 💪", mot_done: "ЦЕЛЬ ДОСТИГНУТА! 🎉 Ты супер-профи!",
     default_goal: "Моя цель", objectInput: "Любой текст", routeInput: "Откуда - Куда", cardAmount: "Сумма в zł", goalNameInput: "Дом у моря", goalMotivation: "Загружаем данные..."
   },
@@ -37,7 +37,7 @@ const TRANSLATIONS = {
     t_export: "📥 Експорт Excel", l_month_export: "Обери місяць", btn_export: "Надіслати Excel у чат",
     t_lang: "Мова інтерфейсу", l_lang_select: "🌐 Мова", t_goal: "🎯 Моя фінансова ціль", l_goal_name: "Назва",
     l_goal_sum: "Сума (zł)", t_profile: "Фінансовий профіль (Ставки)", btn_save_settings: "Зберегти зміни",
-    alert_hours: "⚠️ Вкажи відпрацьовані години!", alert_audit: "⚠️ Обери місяць та введи суму!", alert_history: "⚠️ Обери місяць для перегляду історії!",
+    alert_hours: "⚠️ Вкажи години роботи АБО за кермом!", alert_audit: "⚠️ Обери місяць та введи суму!", alert_history: "⚠️ Обери місяць для перегляду історії!",
     mot_start: "Початок покладено! 🚀 Запиши пару змін.", mot_good: "Гарний старт! Рухаємось далі. 💼", mot_fast: "Хороший темп! Скарбничка поповнюється. 🔥", mot_close: "Вже близько! Піднажми! 💪", mot_done: "ЦІЛЬ ДОСЯГНУТА! 🎉 Ти супер-профі!",
     default_goal: "Моя ціль", objectInput: "Будь-який текст", routeInput: "Звідки - Куди", cardAmount: "Сума в zł", goalNameInput: "Будинок біля моря", goalMotivation: "Завантажуємо дані..."
   },
@@ -55,14 +55,14 @@ const TRANSLATIONS = {
     t_export: "📥 Eksport Excel", l_month_export: "Wybierz miesiąc", btn_export: "Wyślij Excel na czat",
     t_lang: "Język interfejsu", l_lang_select: "🌐 Język", t_goal: "🎯 Mój cel finansowy", l_goal_name: "Nazwa",
     l_goal_sum: "Kwota (zł)", t_profile: "Profil finansowy (Stawki)", btn_save_settings: "Zapisz zmiany",
-    alert_hours: "⚠️ Podaj przepracowane godziny!", alert_audit: "⚠️ Wybierz miesiąc i wpisz kwotę!", alert_history: "⚠️ Wybierz miesiąc, aby wyświetlić historię!",
+    alert_hours: "⚠️ Podaj godziny pracy LUB za kierownicą!", alert_audit: "⚠️ Wybierz miesiąc i wpisz kwotę!", alert_history: "⚠️ Wybierz miesiąc, aby wyświetlić historię!",
     mot_start: "Początek zrobiony! 🚀 Zapisz parę zmian.", mot_good: "Świetny start! Idziemy dalej. 💼", mot_fast: "Dobre tempo! Skarbonka rośnie. 🔥", mot_close: "Już blisko! Dajesz! 💪", mot_done: "CEL OSIĄGNIĘTY! 🎉 Jesteś super-pro!",
     default_goal: "Mój cel", objectInput: "Dowolny tekst", routeInput: "Skąd - Dokąd", cardAmount: "Kwota w zł", goalNameInput: "Dom nad morzem", goalMotivation: "Wczytywanie danych..."
   }
 };
 
 let currentLang = "RUS";
-let percent = 0; // ИСПРАВЛЕНИЕ: Вынесли процент наверх, чтобы код не крашился!
+let percent = 0; 
 
 function applyLanguage(lang) {
   currentLang = lang;
@@ -109,7 +109,6 @@ function updateMotivationText() {
 // --- ЧТЕНИЕ ДАННЫХ ИЗ БОТА ---
 const urlParams = new URLSearchParams(window.location.search);
 
-// 1. СНАЧАЛА считаем цель, чтобы не сломать переводы
 let gTarget = parseFloat(urlParams.get("g_target")) || 8000;
 let cNet = parseFloat(urlParams.get("c_net")) || 0;
 
@@ -119,11 +118,9 @@ if (gTarget > 0 && cNet > 0) {
     percent = 0;
 }
 
-// 2. ТЕПЕРЬ безопасно включаем язык
 if (urlParams.has("lang")) applyLanguage(urlParams.get("lang"));
 else applyLanguage("RUS"); 
 
-// 3. ЗАПОЛНЯЕМ поля ставок
 if (urlParams.has("base")) document.getElementById("baseRateInput").value = urlParams.get("base");
 if (urlParams.has("extra")) document.getElementById("extraRateInput").value = urlParams.get("extra");
 if (urlParams.has("eur")) document.getElementById("eurRateInput").value = urlParams.get("eur");
@@ -131,7 +128,6 @@ if (urlParams.has("drive")) document.getElementById("driveRateInput").value = ur
 if (urlParams.has("drive_eur")) document.getElementById("driveEurRateInput").value = urlParams.get("drive_eur");
 if (urlParams.has("car") && urlParams.get("car") !== "") document.getElementById("carInput").value = urlParams.get("car");
 
-// 4. ОФОРМЛЯЕМ прогресс-бар
 let passedGName = urlParams.get("g_name");
 if (passedGName && passedGName !== "Моя цель" && passedGName !== "Финансовая цель" && passedGName !== "null") {
     document.getElementById("goalNameInput").value = passedGName;
@@ -178,9 +174,14 @@ function sendShift() {
     is_trip: document.getElementById("dietInput").checked,
   };
 
-  if (data.status === "Work" && (!data.hours || data.hours <= 0)) {
+  // --- ИСПРАВЛЕНИЕ: ЛОГИКА ДЛЯ ДАЛЬНОБОЙЩИКОВ ---
+  let h = parseFloat(data.hours) || 0;
+  let d = parseFloat(data.drive) || 0;
+  
+  if (data.status === "Work" && h <= 0 && d <= 0) {
     return tg.showAlert(TRANSLATIONS[currentLang].alert_hours);
   }
+  // ----------------------------------------------
 
   let flash = document.createElement('div');
   flash.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:white; z-index:9999; pointer-events:none; opacity:0.9; transition: opacity 0.15s ease-out;';
