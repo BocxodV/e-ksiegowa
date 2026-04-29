@@ -21,7 +21,8 @@ const TRANSLATIONS = {
     l_goal_sum: "Сумма (zł)", t_profile: "Финансовый профиль (Ставки)", btn_save_settings: "Сохранить изменения",
     alert_hours: "⚠️ Укажи часы работы ИЛИ за рулем!", alert_audit: "⚠️ Выбери месяц и введи сумму!", alert_history: "⚠️ Выбери месяц для просмотра истории!",
     mot_start: "Начало положено! 🚀 Отложи первую сумму.", mot_good: "Отличный старт! Двигаемся дальше. 💼", mot_fast: "Хороший темп! Копилка пополняется. 🔥", mot_close: "Уже близко! Поднажми! 💪", mot_done: "ЦЕЛЬ ДОСТИГНУТА! 🎉 Ты супер-профи!",
-    default_goal: "Моя цель", objectInput: "Любой текст", routeInput: "Откуда - Куда", cardAmount: "Сумма в zł", goalNameInput: "Дом у моря", goalMotivation: "Загружаем данные..."
+    default_goal: "Моя цель", objectInput: "Любой текст", routeInput: "Откуда - Куда", cardAmount: "Сумма в zł", goalNameInput: "Дом у моря", goalMotivation: "Загружаем данные...",
+    t_analytics: "📈 Топ объектов (Аналитика)", l_month_analytics: "Выбери месяц", btn_analytics: "Показать Топ объектов"
   },
   UKR: {
     tab_shift: "💼 Зміна", tab_reports: "📊 Звіти", tab_settings: "⚙️ Налаштування",
@@ -39,7 +40,8 @@ const TRANSLATIONS = {
     l_goal_sum: "Сума (zł)", t_profile: "Фінансовий профіль (Ставки)", btn_save_settings: "Зберегти зміни",
     alert_hours: "⚠️ Вкажи години роботи АБО за кермом!", alert_audit: "⚠️ Обери місяць та введи суму!", alert_history: "⚠️ Обери місяць для перегляду історії!",
     mot_start: "Початок покладено! 🚀 Відклади першу суму.", mot_good: "Гарний старт! Рухаємось далі. 💼", mot_fast: "Хороший темп! Скарбничка поповнюється. 🔥", mot_close: "Вже близько! Піднажми! 💪", mot_done: "ЦІЛЬ ДОСЯГНУТА! 🎉 Ти супер-профі!",
-    default_goal: "Моя ціль", objectInput: "Будь-який текст", routeInput: "Звідки - Куди", cardAmount: "Сума в zł", goalNameInput: "Будинок біля моря", goalMotivation: "Завантажуємо дані..."
+    default_goal: "Моя ціль", objectInput: "Будь-який текст", routeInput: "Звідки - Куди", cardAmount: "Сума в zł", goalNameInput: "Будинок біля моря", goalMotivation: "Завантажуємо дані...",
+    t_analytics: "📈 Топ об'єктів (Аналітика)", l_month_analytics: "Обери місяць", btn_analytics: "Показати Топ об'єктів"
   },
   PL: {
     tab_shift: "💼 Zmiana", tab_reports: "📊 Raporty", tab_settings: "⚙️ Ustawienia",
@@ -57,7 +59,8 @@ const TRANSLATIONS = {
     l_goal_sum: "Kwota (zł)", t_profile: "Profil finansowy (Stawki)", btn_save_settings: "Zapisz zmiany",
     alert_hours: "⚠️ Podaj godziny pracy LUB za kierownicą!", alert_audit: "⚠️ Wybierz miesiąc i wpisz kwotę!", alert_history: "⚠️ Wybierz miesiąc, aby wyświetlić historię!",
     mot_start: "Początek zrobiony! 🚀 Odłóż pierwszą kwotę.", mot_good: "Świetny start! Idziemy dalej. 💼", mot_fast: "Dobre tempo! Skarbonka rośnie. 🔥", mot_close: "Już blisko! Dajesz! 💪", mot_done: "CEL OSIĄGNIĘTY! 🎉 Jesteś super-pro!",
-    default_goal: "Mój cel", objectInput: "Dowolny tekst", routeInput: "Skąd - Dokąd", cardAmount: "Kwota w zł", goalNameInput: "Dom nad morzem", goalMotivation: "Wczytywanie danych..."
+    default_goal: "Mój cel", objectInput: "Dowolny tekst", routeInput: "Skąd - Dokąd", cardAmount: "Kwota w zł", goalNameInput: "Dom nad morzem", goalMotivation: "Wczytywanie danych...",
+    t_analytics: "📈 Top obiektów (Analityka)", l_month_analytics: "Wybierz miesiąc", btn_analytics: "Pokaż Top obiektów"
   }
 };
 
@@ -161,6 +164,16 @@ function openTab(tabId) {
   document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
   document.getElementById(tabId).classList.add("active");
   document.getElementById("tab_" + tabId).classList.add("active");
+}
+
+function sendAnalyticsReq() {
+  let monthVal = document.getElementById("analyticsMonth").value;
+  let formattedMonth = monthVal ? monthVal.split("-")[1] + "." + monthVal.split("-")[0] : "";
+  if (!formattedMonth) {
+    return tg.showAlert(TRANSLATIONS[currentLang].alert_history);
+  }
+  tg.sendData(JSON.stringify({ action: "analytics", month: formattedMonth }));
+  tg.close();
 }
 
 function sendShift() {
