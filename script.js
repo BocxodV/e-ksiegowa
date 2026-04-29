@@ -174,7 +174,6 @@ function sendShift() {
     is_trip: document.getElementById("dietInput").checked,
   };
 
-  // --- ИСПРАВЛЕНИЕ: ЛОГИКА ДЛЯ ВОЖДЕНИЯ ---
   let h = parseFloat(data.hours) || 0;
   let d = parseFloat(data.drive) || 0;
   let hasRoute = data.route && data.route.includes("-");
@@ -182,7 +181,6 @@ function sendShift() {
   if (data.status === "Work" && h <= 0 && d <= 0 && !hasRoute) {
     return tg.showAlert(TRANSLATIONS[currentLang].alert_hours);
   }
-  // ----------------------------------------------
 
   let flash = document.createElement('div');
   flash.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:white; z-index:9999; pointer-events:none; opacity:0.9; transition: opacity 0.15s ease-out;';
@@ -252,4 +250,44 @@ function sendHistoryReq() {
   }
   tg.sendData(JSON.stringify({ action: "history", month: formattedMonth }));
   tg.close();
+}
+
+// --- ЛОГИКА СВАЙПОВ ДЛЯ ВКЛАДОК ---
+let touchStartX = 0;
+let touchEndX = 0;
+
+const tabsOrder = ['shift', 'reports', 'settings'];
+
+document.addEventListener('touchstart', e => {
+    touchStartX = e.changedTouches[0].screenX;
+}, { passive: true });
+
+document.addEventListener('touchend', e => {
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipe();
+});
+
+function handleSwipe() {
+    let swipeDistance = touchEndX - touchStartX;
+    let threshold = 60; // Минимальная длина свайпа в пикселях
+
+    let activeTabElement = document.querySelector('.content.active');
+    if (!activeTabElement) return;
+    
+    let activeTabId = activeTabElement.id;
+    let currentIndex = tabsOrder.indexOf(activeTabId);
+
+    // Свайп ВЛЕВО (следующая вкладка)
+    if (swipeDistance < -threshold) {
+        if (currentIndex < tabsOrder.length - 1) {
+            openTab(tabsOrder[currentIndex + 1]);
+        }
+    }
+    
+    // Свайп ВПРАВО (предыдущая вкладка)
+    if (swipeDistance > threshold) {
+        if (currentIndex > 0) {
+            openTab(tabsOrder[currentIndex - 1]);
+        }
+    }
 }
