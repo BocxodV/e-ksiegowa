@@ -93,6 +93,53 @@
     <div id="reports" class="content">
       <div class="section-title" id="t_progress">🎯 Прогресс за месяц</div>
       <div class="block" style="padding: 16px">
+        <!-- --- НАРИСОВАННАЯ СВИНКА (SVG) --- -->
+        <svg
+          width="100px"
+          height="80px"
+          viewBox="0 0 100 80"
+          version="1.1"
+          xmlns="http://www.w3.org/2000/svg"
+          style="
+            display: block;
+            margin: 0 auto 15px auto;
+            stroke: #2c3e50;
+            stroke-width: 2;
+            fill: #ffd93b;
+          "
+        >
+          <!-- Тело свинки -->
+          <path
+            d="M50,15 C20,15 5,30 5,45 C5,65 25,75 50,75 C75,75 95,65 95,45 C95,30 80,15 50,15 Z"
+            fill="#ffffff"
+            stroke-width="2"
+          />
+          <!-- Ноги -->
+          <path d="M25,65 L25,78" fill="none" />
+          <path d="M35,70 L35,80" fill="none" />
+          <path d="M65,70 L65,80" fill="none" />
+          <path d="M75,65 L75,78" fill="none" />
+          <!-- Пятачок -->
+          <ellipse
+            cx="50"
+            cy="50"
+            rx="12"
+            ry="10"
+            fill="#ffd93b"
+            stroke-width="2"
+          />
+          <circle cx="45" cy="50" r="2" fill="#2c3e50" />
+          <circle cx="55" cy="50" r="2" fill="#2c3e50" />
+          <!-- Глаза -->
+          <circle cx="38" cy="35" r="3" fill="#2c3e50" />
+          <circle cx="62" cy="35" r="3" fill="#2c3e50" />
+          <!-- Уши -->
+          <path d="M25,25 L10,10 L30,20 Z" fill="#ffd93b" stroke-width="2" />
+          <path d="M75,25 L90,10 L70,20 Z" fill="#ffd93b" stroke-width="2" />
+          <!-- Щель для монеты -->
+          <rect x="40" y="23" width="20" height="4" rx="2" fill="#2c3e50" />
+        </svg>
+        <!-- --- КОНЕЦ СВИНКИ --- -->
         <div
           style="
             display: flex;
