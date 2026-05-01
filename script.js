@@ -22,7 +22,15 @@ const TRANSLATIONS = {
     alert_hours: "⚠️ Укажи часы работы ИЛИ за рулем!", alert_audit: "⚠️ Выбери месяц и введи сумму!", alert_history: "⚠️ Выбери месяц для просмотра истории!",
     mot_start: "Начало положено! 🚀 Отложи первую сумму.", mot_good: "Отличный старт! Двигаемся дальше. 💼", mot_fast: "Хороший темп! Копилка пополняется. 🔥", mot_close: "Уже близко! Поднажми! 💪", mot_done: "ЦЕЛЬ ДОСТИГНУТА! 🎉 Ты супер-профи!",
     default_goal: "Моя цель", objectInput: "Любой текст", routeInput: "Откуда - Куда", cardAmount: "Сумма в zł", goalNameInput: "Дом у моря", goalMotivation: "Загружаем данные...",
-    t_analytics: "📈 Топ объектов (Аналитика)", l_month_analytics: "Выбери месяц", btn_analytics: "Показать Топ объектов"
+    t_analytics: "📈 Топ объектов (Аналитика)", l_month_analytics: "Выбери месяц", btn_analytics: "Показать Топ объектов",
+    l_goal_date: "К какому сроку?",
+    l_env: "✉️ Конверт (zł/h)",
+    l_rate_eur: "💶 Ставка (EUR/h)",
+    l_drive_zl: "🚗 Руль (zł/h)",
+    l_drive_eur: "🚙 Руль (EUR/h)",
+    t_support: "☕ Поддержать проект",
+    t_support_desc: "Бот экономит твое время на расчетах? Угости ИИ-бухгалтершу кофе!",
+    placeholder_card: "Сумма в zł"
   },
   UKR: {
     tab_shift: "💼 Зміна", tab_reports: "📊 Звіти", tab_settings: "⚙️ Налаштування",
@@ -41,7 +49,15 @@ const TRANSLATIONS = {
     alert_hours: "⚠️ Вкажи години роботи АБО за кермом!", alert_audit: "⚠️ Обери місяць та введи суму!", alert_history: "⚠️ Обери місяць для перегляду історії!",
     mot_start: "Початок покладено! 🚀 Відклади першу суму.", mot_good: "Гарний старт! Рухаємось далі. 💼", mot_fast: "Хороший темп! Скарбничка поповнюється. 🔥", mot_close: "Вже близько! Піднажми! 💪", mot_done: "ЦІЛЬ ДОСЯГНУТА! 🎉 Ти супер-профі!",
     default_goal: "Моя ціль", objectInput: "Будь-який текст", routeInput: "Звідки - Куди", cardAmount: "Сума в zł", goalNameInput: "Будинок біля моря", goalMotivation: "Завантажуємо дані...",
-    t_analytics: "📈 Топ об'єктів (Аналітика)", l_month_analytics: "Обери місяць", btn_analytics: "Показати Топ об'єктів"
+    t_analytics: "📈 Топ об'єктів (Аналітика)", l_month_analytics: "Обери місяць", btn_analytics: "Показати Топ об'єктів",
+    l_goal_date: "До якого терміну?",
+    l_env: "✉️ Конверт (zł/h)",
+    l_rate_eur: "💶 Ставка (EUR/h)",
+    l_drive_zl: "🚗 Кермо (zł/h)",
+    l_drive_eur: "🚙 Кермо (EUR/h)",
+    t_support: "☕ Підтримати проєкт",
+    t_support_desc: "Бот економить твій час на розрахунках? Пригости ШІ-бухгалтерку кавою!",
+    placeholder_card: "Сума в zł"
   },
   PL: {
     tab_shift: "💼 Zmiana", tab_reports: "📊 Raporty", tab_settings: "⚙️ Ustawienia",
@@ -60,7 +76,15 @@ const TRANSLATIONS = {
     alert_hours: "⚠️ Podaj godziny pracy LUB za kierownicą!", alert_audit: "⚠️ Wybierz miesiąc i wpisz kwotę!", alert_history: "⚠️ Wybierz miesiąc, aby wyświetlić historię!",
     mot_start: "Początek zrobiony! 🚀 Odłóż pierwszą kwotę.", mot_good: "Świetny start! Idziemy dalej. 💼", mot_fast: "Dobre tempo! Skarbonka rośnie. 🔥", mot_close: "Już blisko! Dajesz! 💪", mot_done: "CEL OSIĄGNIĘTY! 🎉 Jesteś super-pro!",
     default_goal: "Mój cel", objectInput: "Dowolny tekst", routeInput: "Skąd - Dokąd", cardAmount: "Kwota w zł", goalNameInput: "Dom nad morzem", goalMotivation: "Wczytywanie danych...",
-    t_analytics: "📈 Top obiektów (Analityka)", l_month_analytics: "Wybierz miesiąc", btn_analytics: "Pokaż Top obiektów"
+    t_analytics: "📈 Top obiektów (Analityka)", l_month_analytics: "Wybierz miesiąc", btn_analytics: "Pokaż Top obiektów",
+    l_goal_date: "Do kiedy?",
+    l_env: "✉️ Koperta (zł/h)",
+    l_rate_eur: "💶 Stawka (EUR/h)",
+    l_drive_zl: "🚗 Kółko (zł/h)",
+    l_drive_eur: "🚙 Kółko (EUR/h)",
+    t_support: "☕ Wesprzyj projekt",
+    t_support_desc: "Bot oszczędza Twój czas? Postaw księgowej AI kawę!",
+    placeholder_card: "Kwota w zł"
   }
 };
 
@@ -96,7 +120,11 @@ function applyLanguage(lang) {
 
 function changeLanguage() {
     const selectedLang = document.getElementById("langInput").value;
-    applyLanguage(selectedLang);
+  applyLanguage(selectedLang);
+  const cardInput = document.getElementById("cardAmount");
+    if (cardInput) {
+        cardInput.placeholder = t.placeholder_card;
+    }
 }
 
 function updateMotivationText() {
