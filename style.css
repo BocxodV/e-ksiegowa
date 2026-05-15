@@ -116,14 +116,22 @@ body {
     border-bottom: none;
 }
 
-/* --- ЭФФЕКТ ПЕРЕЛИСТЫВАНИЯ СТРАНИЦЫ --- */
+/* --- ЭЛЕГАНТНОЕ ПОЯВЛЕНИЕ СТРАНИЦЫ (БЕЗ 3D-БАГОВ) --- */
+.page-fade {
+    animation: smoothFade 0.3s ease-out forwards;
+}
 
-/* Класс анимации, который мы будем вешать через JS */
-.page-flip {
-    animation: flipPageAnim 0.6s ease-in-out;
-    transform-origin: left center;
-    /* Перелистываем от левого края, как в книге */
-    backface-visibility: hidden;
+@keyframes smoothFade {
+    0% {
+        opacity: 0;
+        transform: translateY(10px);
+        /* Страница мягко всплывает снизу */
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @keyframes flipPageAnim {
