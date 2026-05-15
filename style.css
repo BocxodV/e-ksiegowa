@@ -203,3 +203,64 @@ input[type="checkbox"] {
         transform: scale(1);
     }
 }
+
+/* Стилизация самого Поляроида */
+.polaroid-wrapper {
+    background: #ffffff;
+    padding: 10px 10px 30px 10px;
+    /* Снизу отступ больше для подписи */
+    box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.2);
+    /* Реалистичная тень */
+    transform: rotate(-3deg);
+    /* Легкий наклон влево */
+    width: 220px;
+    margin: 25px auto;
+    /* Центрируем */
+    position: relative;
+    transition: transform 0.3s ease;
+    /* Анимация при наведении */
+}
+
+/* Реакция на нажатие/наведение (фото чуть выравнивается) */
+.polaroid-wrapper:hover,
+.polaroid-wrapper:active {
+    transform: rotate(0deg) scale(1.02);
+}
+
+.polaroid-wrapper img {
+    width: 100%;
+    height: auto;
+    border: 1px solid #eeeeee;
+    display: block;
+}
+
+/* Текстовая подпись под фото в стиле маркера */
+.polaroid-caption {
+    text-align: center;
+    font-family: 'Neucha', cursive;
+    font-size: 18px;
+    color: #2c3e50;
+    margin-top: 10px;
+}
+
+/* Иллюзия металлической скрепки через псевдоэлемент */
+.polaroid-wrapper::before {
+    content: "📎";
+    font-size: 35px;
+    position: absolute;
+    top: -18px;
+    /* Сдвигаем наверх, за край фото */
+    left: 20px;
+    transform: rotate(15deg);
+    filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.3));
+    /* Тень для скрепки */
+    z-index: 2;
+}
+
+/* Легкий бумажный фон для блоков контента (опционально) */
+.block {
+    background-color: #fdfbf7 !important;
+    /* Цвет слоновой кости/старой бумаги */
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.02), 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
