@@ -16,61 +16,69 @@
     /* Оранжевый маркер */
 }
 
-/* Фон в виде тетради в линейку */
+/* --- ТЕКСТУРА БУМАГИ ДЛЯ ВСЕГО ПРИЛОЖЕНИЯ --- */
 body {
-    font-family: 'Neucha', cursive, sans-serif;
-    background-color: var(--paper-bg);
-    background-image: repeating-linear-gradient(transparent, transparent 29px, var(--paper-line) 30px);
-    color: var(--ink-color);
-    margin: 0;
-    padding: 16px;
-    box-sizing: border-box;
-    font-size: 18px;
+    background-color: #f4f1ea;
+    /* Базовый цвет бумаги */
+    background-image:
+        linear-gradient(90deg, transparent 79px, #abced4 79px, #abced4 81px, transparent 81px),
+        linear-gradient(#eee 0.1em, transparent 0.1em);
+    background-size: 100% 1.2em;
+    /* Эффект линовки */
+    font-family: 'Neucha', cursive;
 }
 
-/* --- ВКЛАДКИ КАК БУМАЖНЫЕ ЗАКЛАДКИ --- */
+/* --- ВКЛАДКИ-ЗАКЛАДКИ --- */
 .tabs {
     display: flex;
-    gap: 8px;
-    margin-bottom: 24px;
-    border-bottom: 2px solid var(--ink-color);
-    padding-bottom: 2px;
+    justify-content: space-around;
+    background: transparent;
+    padding: 0;
+    margin-top: 10px;
+    border-bottom: 2px solid #2c3e50;
 }
 
 .tab {
-    flex: 1;
-    text-align: center;
-    padding: 8px 0;
-    font-size: 18px;
-    font-weight: bold;
-    background-color: var(--paper-bg);
-    border: 2px solid var(--ink-color);
+    background: #e0d9c5;
+    /* Цвет картона закладки */
+    border: 1px solid #2c3e50;
     border-bottom: none;
-    /* Кривые края для эффекта вырезанной бумаги */
-    border-radius: 10px 15px 0 0 / 15px 10px 0 0;
+    border-radius: 8px 8px 0 0;
+    padding: 10px 15px;
     cursor: pointer;
-    transition: 0.2s;
-    opacity: 0.6;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    position: relative;
+    top: 2px;
+    color: #2c3e50;
 }
 
 .tab.active {
-    opacity: 1;
-    background-color: var(--highlight-yellow);
-    transform: translateY(2px);
-    /* Закладка выходит вперед */
-    box-shadow: 2px -2px 0px rgba(0, 0, 0, 0.1);
+    background: #fdfbf7;
+    /* Цвет активной страницы */
+    top: 0;
+    padding-bottom: 12px;
+    z-index: 2;
+    box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* --- КАРТОЧКИ КАК ОБРЫВКИ БУМАГИ --- */
+/* Стилизация блоков под листы бумаги */
 .block {
-    background-color: #ffffff;
-    border: 2px solid var(--ink-color);
-    /* Эффект нарисованного от руки прямоугольника */
-    border-radius: 3px 15px 5px 15px / 15px 3px 15px 5px;
-    padding: 0 16px;
-    margin-bottom: 24px;
-    box-shadow: 4px 4px 0px rgba(44, 62, 80, 0.15);
-    /* Грубая тень */
+    background: #fdfbf7 !important;
+    border: none !important;
+    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.05) !important;
+    position: relative;
+}
+
+.block::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+    background: rgba(171, 206, 212, 0.3);
+    /* Цвет корешка блокнота */
 }
 
 /* --- ПОЛЯ ВВОДА --- */
