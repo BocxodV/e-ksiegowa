@@ -192,10 +192,31 @@ document.getElementById("statusInput").addEventListener("change", function () {
 });
 
 function openTab(tabId) {
-  document.querySelectorAll(".content").forEach((c) => c.classList.remove("active"));
-  document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
-  document.getElementById(tabId).classList.add("active");
+  const allContents = document.querySelectorAll(".content");
+  const allTabs = document.querySelectorAll(".tab");
+  
+  // 1. Убираем активные классы
+  allContents.forEach((c) => {
+    c.classList.remove("active");
+    c.classList.remove("page-flip"); // Очищаем старую анимацию
+  });
+  allTabs.forEach((t) => t.classList.remove("active"));
+  
+  // 2. Активируем нужную вкладку
+  const targetContent = document.getElementById(tabId);
+  targetContent.classList.add("active");
   document.getElementById("tab_" + tabId).classList.add("active");
+  
+  // 3. Запускаем эффект перелистывания
+  // Используем setTimeout на 10мс, чтобы браузер успел заметить добавление класса
+  setTimeout(() => {
+    targetContent.classList.add("page-flip");
+  }, 10);
+
+  // Вибрация телефона при "перелистывании"
+  if (window.Telegram.WebApp.HapticFeedback) {
+      window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+  }
 }
 
 function sendAnalyticsReq() {

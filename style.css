@@ -81,6 +81,75 @@ body {
     /* Цвет корешка блокнота */
 }
 
+/* --- РАЗНОЦВЕТНЫЕ ЗАКЛАДКИ --- */
+
+/* Вкладка "Смена" - небесно-голубой */
+#tab_shift {
+    background-color: #d1e8ed;
+    border-color: #9abcc3;
+}
+
+#tab_shift.active {
+    background-color: #fdfbf7;
+    border-bottom: none;
+}
+
+/* Вкладка "Отчеты" - песочно-желтый */
+#tab_reports {
+    background-color: #f7e9c3;
+    border-color: #dcc48e;
+}
+
+#tab_reports.active {
+    background-color: #fdfbf7;
+    border-bottom: none;
+}
+
+/* Вкладка "Настройки" - нежно-сиреневый или серый */
+#tab_settings {
+    background-color: #e3e3e3;
+    border-color: #bdbdbd;
+}
+
+#tab_settings.active {
+    background-color: #fdfbf7;
+    border-bottom: none;
+}
+
+/* --- ЭФФЕКТ ПЕРЕЛИСТЫВАНИЯ СТРАНИЦЫ --- */
+
+/* Класс анимации, который мы будем вешать через JS */
+.page-flip {
+    animation: flipPageAnim 0.6s ease-in-out;
+    transform-origin: left center;
+    /* Перелистываем от левого края, как в книге */
+    backface-visibility: hidden;
+}
+
+@keyframes flipPageAnim {
+    0% {
+        transform: perspective(1500px) rotateY(0deg);
+        opacity: 1;
+    }
+
+    50% {
+        transform: perspective(1500px) rotateY(-20deg);
+        /* Страница приподнимается */
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: perspective(1500px) rotateY(0deg);
+        opacity: 1;
+    }
+}
+
+/* Добавим небольшую тень по левому краю контента для имитации корешка */
+.content {
+    box-shadow: -10px 0 15px -10px rgba(0, 0, 0, 0.1) inset;
+    transition: opacity 0.3s ease;
+}
+
 /* --- ПОЛЯ ВВОДА --- */
 .input-row {
     display: flex;
