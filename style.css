@@ -1,122 +1,102 @@
 /* --- ЛАМПОВЫЙ БЛОКНОТ: ПАЛИТРА --- */
 :root {
     --paper-bg: #f9f8f3;
-    /* Цвет слоновой кости / старой бумаги */
     --paper-line: #e1e1e1;
-    /* Цвет линовки тетради */
     --ink-color: #2c3e50;
-    /* Темно-синие чернила ручки */
     --hint-ink: #7f8c8d;
-    /* Блеклые чернила для подсказок */
     --highlight-yellow: #ffd93b;
-    /* Желтый текстовыделитель */
     --highlight-green: #98fb98;
-    /* Зеленый маркер */
     --highlight-orange: #ffb347;
-    /* Оранжевый маркер */
 }
 
-/* --- ТЕКСТУРА БУМАГИ ДЛЯ ВСЕГО ПРИЛОЖЕНИЯ --- */
 body {
-    background-color: #f4f1ea;
-    /* Базовый цвет бумаги */
-    background-image:
-        linear-gradient(90deg, transparent 79px, #abced4 79px, #abced4 81px, transparent 81px),
-        linear-gradient(#eee 0.1em, transparent 0.1em);
-    background-size: 100% 1.2em;
-    /* Эффект линовки */
+    margin: 0;
+    padding: 15px 10px;
+    background-color: #d9d0c1;
+    /* Цвет стола/обложки */
     font-family: 'Neucha', cursive;
+    height: 100vh;
+    box-sizing: border-box;
+    overflow: hidden;
+    /* Запрещаем скролл всего экрана */
 }
 
-/* --- ВКЛАДКИ-ЗАКЛАДКИ --- */
-.tabs {
+/* СТРУКТУРА ПЛАНЕРА */
+.planner-container {
     display: flex;
-    justify-content: space-around;
-    background: transparent;
-    padding: 0;
-    margin-top: 10px;
-    border-bottom: 2px solid #2c3e50;
+    height: 100%;
+    max-width: 500px;
+    margin: 0 auto;
 }
 
-.tab {
-    background: #e0d9c5;
-    /* Цвет картона закладки */
-    border: 1px solid #2c3e50;
-    border-bottom: none;
-    border-radius: 8px 8px 0 0;
-    padding: 10px 15px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: all 0.3s ease;
+/* Бумажная страница */
+.planner-page {
+    flex-grow: 1;
+    background-color: #fdfbf7;
+    border-radius: 12px 0 0 12px;
+    box-shadow: -5px 5px 20px rgba(0, 0, 0, 0.15);
+    overflow-y: auto;
+    /* Скролл только внутри листа */
+    padding: 15px;
     position: relative;
-    top: 2px;
-    color: #2c3e50;
-}
-
-.tab.active {
-    background: #fdfbf7;
-    /* Цвет активной страницы */
-    top: 0;
-    padding-bottom: 12px;
     z-index: 2;
-    box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
+    background-image: linear-gradient(#eee 0.1em, transparent 0.1em);
+    background-size: 100% 1.2em;
+    /* Линовка */
 }
 
-/* Стилизация блоков под листы бумаги */
-.block {
-    background: #fdfbf7 !important;
-    border: none !important;
-    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.05) !important;
-    position: relative;
-}
-
-.block::before {
+/* Имитация корешка слева */
+.planner-page::before {
     content: "";
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 5px;
-    background: rgba(171, 206, 212, 0.3);
-    /* Цвет корешка блокнота */
+    position: fixed;
+    left: 10px;
+    /* Отступ body */
+    top: 15px;
+    bottom: 15px;
+    width: 6px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 12px 0 0 12px;
+    z-index: 10;
+    pointer-events: none;
 }
 
-/* --- РАЗНОЦВЕТНЫЕ ЗАКЛАДКИ --- */
-
-/* Вкладка "Смена" - небесно-голубой */
-#tab_shift {
-    background-color: #d1e8ed;
-    border-color: #9abcc3;
+/* Контейнер закладок */
+.planner-tabs {
+    display: flex;
+    flex-direction: column;
+    width: 45px;
+    padding-top: 15px;
+    overflow-y: auto;
 }
 
-#tab_shift.active {
-    background-color: #fdfbf7;
-    border-bottom: none;
+/* Отдельная боковая закладка */
+.v-tab {
+    background: #e0d9c5;
+    border: 1px solid #ccc;
+    border-left: none;
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 5px;
+    padding: 10px 0;
+    text-align: center;
+    font-size: 18px;
+    cursor: pointer;
+    box-shadow: 3px 2px 5px rgba(0, 0, 0, 0.08);
+    transition: all 0.2s ease;
+    position: relative;
+    left: -2px;
+    z-index: 1;
 }
 
-/* Вкладка "Отчеты" - песочно-желтый */
-#tab_reports {
-    background-color: #f7e9c3;
-    border-color: #dcc48e;
+.v-tab.active {
+    background: #fdfbf7;
+    width: 45px;
+    /* Выдвигается */
+    z-index: 3;
+    border-left: 2px solid #fdfbf7;
+    box-shadow: 4px 2px 8px rgba(0, 0, 0, 0.12);
 }
 
-#tab_reports.active {
-    background-color: #fdfbf7;
-    border-bottom: none;
-}
-
-/* Вкладка "Настройки" - нежно-сиреневый или серый */
-#tab_settings {
-    background-color: #e3e3e3;
-    border-color: #bdbdbd;
-}
-
-#tab_settings.active {
-    background-color: #fdfbf7;
-    border-bottom: none;
-}
-
-/* --- ЭЛЕГАНТНОЕ ПОЯВЛЕНИЕ СТРАНИЦЫ (БЕЗ 3D-БАГОВ) --- */
+/* АНИМАЦИИ */
 .page-fade {
     animation: smoothFade 0.3s ease-out forwards;
 }
@@ -125,7 +105,6 @@ body {
     0% {
         opacity: 0;
         transform: translateY(10px);
-        /* Страница мягко всплывает снизу */
     }
 
     100% {
@@ -134,38 +113,21 @@ body {
     }
 }
 
-@keyframes flipPageAnim {
-    0% {
-        transform: perspective(1500px) rotateY(0deg);
-        opacity: 1;
-    }
-
-    50% {
-        transform: perspective(1500px) rotateY(-20deg);
-        /* Страница приподнимается */
-        opacity: 0.8;
-    }
-
-    100% {
-        transform: perspective(1500px) rotateY(0deg);
-        opacity: 1;
-    }
-}
-
-/* Добавим небольшую тень по левому краю контента для имитации корешка */
 .content {
-    box-shadow: -10px 0 15px -10px rgba(0, 0, 0, 0.1) inset;
-    transition: opacity 0.3s ease;
+    display: none;
 }
 
-/* --- ПОЛЯ ВВОДА --- */
+.content.active {
+    display: block;
+}
+
+/* ПОЛЯ ВВОДА */
 .input-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 12px 0;
     border-bottom: 1px dashed var(--hint-ink);
-    /* Пунктирная линия */
 }
 
 .input-row:last-child {
@@ -180,7 +142,6 @@ label {
     gap: 8px;
 }
 
-/* Настраиваем поля, чтобы они выглядели как текст, вписанный ручкой */
 input[type="text"],
 input[type="number"],
 input[type="date"],
@@ -192,7 +153,6 @@ select {
     font-size: 20px;
     font-family: 'Neucha', cursive;
     color: #1a252f;
-    /* Цвет чернил чуть темнее для введенного текста */
     width: 50%;
     outline: none;
 }
@@ -202,7 +162,6 @@ input::placeholder {
     opacity: 0.6;
 }
 
-/* --- ЧЕКБОКСЫ --- */
 .checkbox-wrapper {
     display: flex;
     align-items: center;
@@ -217,7 +176,7 @@ input[type="checkbox"] {
     cursor: pointer;
 }
 
-/* --- ЗАГОЛОВКИ БЛОКОВ --- */
+/* ЗАГОЛОВКИ И КНОПКИ */
 .section-title {
     font-size: 16px;
     color: var(--ink-color);
@@ -228,17 +187,13 @@ input[type="checkbox"] {
     letter-spacing: 1px;
     text-decoration: underline;
     text-decoration-style: wavy;
-    /* Волнистое подчеркивание */
     text-decoration-color: var(--highlight-orange);
 }
 
-/* --- КНОПКИ В СТИЛЕ МАРКЕРОВ --- */
-.btn-main,
-.btn {
+.btn-main {
     background-color: var(--highlight-yellow);
     color: var(--ink-color);
     border: 2px solid var(--ink-color);
-    /* Кривой контур кнопки */
     border-radius: 15px 5px 25px 5px / 5px 15px 5px 25px;
     width: 100%;
     padding: 12px;
@@ -252,61 +207,23 @@ input[type="checkbox"] {
     transition: all 0.1s;
 }
 
-.btn-main:active,
-.btn:active {
+.btn-main:active {
     transform: translate(3px, 4px);
     box-shadow: none;
-    /* Эффект нажатия на бумагу */
 }
 
-/* Разные цвета маркеров для разных действий (назначаются через style в HTML при желании, или оставляем желтыми) */
-#btn_audit {
-    background-color: var(--highlight-green);
-}
-
-#btn_history {
-    background-color: var(--highlight-orange);
-}
-
-.content {
-    display: none;
-    animation: fadeIn 0.4s ease;
-}
-
-.content.active {
-    display: block;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: scale(0.98);
-    }
-
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-/* Стилизация самого Поляроида */
+/* СТИЛЬ ПОЛЯРОИДА */
 .polaroid-wrapper {
     background: #ffffff;
     padding: 10px 10px 30px 10px;
-    /* Снизу отступ больше для подписи */
     box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.2);
-    /* Реалистичная тень */
     transform: rotate(-3deg);
-    /* Легкий наклон влево */
-    width: 220px;
-    margin: 25px auto;
-    /* Центрируем */
+    width: 200px;
+    margin: 15px auto 25px auto;
     position: relative;
     transition: transform 0.3s ease;
-    /* Анимация при наведении */
 }
 
-/* Реакция на нажатие/наведение (фото чуть выравнивается) */
 .polaroid-wrapper:hover,
 .polaroid-wrapper:active {
     transform: rotate(0deg) scale(1.02);
@@ -319,7 +236,6 @@ input[type="checkbox"] {
     display: block;
 }
 
-/* Текстовая подпись под фото в стиле маркера */
 .polaroid-caption {
     text-align: center;
     font-family: 'Neucha', cursive;
@@ -328,24 +244,19 @@ input[type="checkbox"] {
     margin-top: 10px;
 }
 
-/* Иллюзия металлической скрепки через псевдоэлемент */
 .polaroid-wrapper::before {
     content: "📎";
     font-size: 35px;
     position: absolute;
     top: -18px;
-    /* Сдвигаем наверх, за край фото */
     left: 20px;
     transform: rotate(15deg);
     filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.3));
-    /* Тень для скрепки */
     z-index: 2;
 }
 
-/* Легкий бумажный фон для блоков контента (опционально) */
 .block {
     background-color: #fdfbf7 !important;
-    /* Цвет слоновой кости/старой бумаги */
     box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.02), 0 2px 8px rgba(0, 0, 0, 0.05) !important;
     border: 1px solid rgba(0, 0, 0, 0.05);
 }

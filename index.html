@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>e-Ksiegowa Pro</title>
+    <title>e-Ksiegowa Pro - Planner</title>
     <link
       href="https://fonts.googleapis.com/css2?family=Neucha&display=swap"
       rel="stylesheet"
@@ -15,388 +15,470 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
   </head>
   <body>
-    <div class="tabs">
-      <div class="tab active" onclick="openTab('shift')" id="tab_shift">
-        💼 Смена
-      </div>
-      <div class="tab" onclick="openTab('reports')" id="tab_reports">
-        📊 Отчеты
-      </div>
-      <div class="tab" onclick="openTab('settings')" id="tab_settings">
-        ⚙️ Настройки
-      </div>
-    </div>
+    <div class="planner-container">
+      <div class="planner-page">
+        <div id="shift" class="content active">
+          <div class="polaroid-wrapper">
+            <img
+              src="https://i.imgur.com/vH1Wn0N.png"
+              alt="Кася"
+              class="kasiaAvatar"
+            />
+            <div class="polaroid-caption">Moja księgowa 🖤</div>
+          </div>
+          <div class="section-title" id="t_work_data">Данные о работе</div>
+          <div class="block">
+            <div class="input-row">
+              <label id="l_date">📅 Дата</label
+              ><input type="date" id="dateInput" />
+            </div>
+            <div class="input-row">
+              <label id="l_status">📌 Статус</label>
+              <select id="statusInput">
+                <option value="Work" id="opt_work">💼 Работа</option>
+                <option value="L4" id="opt_l4">💊 Больничный (L4)</option>
+                <option value="Urlop" id="opt_urlop">🌴 Отпуск</option>
+              </select>
+            </div>
+            <div class="input-row" id="endDateRow" style="display: none">
+              <label id="l_end_date">🏁 По (включительно)</label>
+              <input type="date" id="endDateInput" />
+            </div>
+            <div class="input-row">
+              <label id="l_object">📍 Объект / Город</label>
+              <input
+                type="text"
+                id="objectInput"
+                list="locationsList"
+                placeholder="Любой текст"
+              />
+              <datalist id="locationsList"></datalist>
+            </div>
+            <div class="input-row">
+              <label id="l_abroad">🌍 Заграница (EUR)</label>
+              <div class="checkbox-wrapper">
+                <input type="checkbox" id="abroadInput" />
+              </div>
+            </div>
+            <div class="input-row">
+              <label id="l_diet">🥪 Командировка (Диета)</label>
+              <div class="checkbox-wrapper">
+                <input type="checkbox" id="dietInput" />
+              </div>
+            </div>
+          </div>
 
-    <div id="shift" class="content active">
-      <div class="polaroid-wrapper">
-        <img
-          src="https://i.imgur.com/vH1Wn0N.png"
-          alt="Кася бухгалтер"
-          id="kasiaAvatar"
-        />
-        <div class="polaroid-caption">Moja księgowa 🖤</div>
-      </div>
-
-      <div class="section-title" id="t_work_data">Данные о работе</div>
-      <div class="block">
-        <div class="input-row">
-          <label id="l_date">📅 Дата</label><input type="date" id="dateInput" />
-        </div>
-        <div class="input-row">
-          <label id="l_status">📌 Статус</label>
-          <select id="statusInput">
-            <option value="Work" id="opt_work">💼 Работа</option>
-            <option value="L4" id="opt_l4">💊 Больничный (L4)</option>
-            <option value="Urlop" id="opt_urlop">🌴 Отпуск</option>
-          </select>
-        </div>
-        <div class="input-row" id="endDateRow" style="display: none">
-          <label id="l_end_date">🏁 По (включительно)</label>
-          <input type="date" id="endDateInput" />
-        </div>
-
-        <div class="input-row">
-          <label id="l_object">📍 Объект / Город</label>
-          <input
-            type="text"
-            id="objectInput"
-            list="locationsList"
-            placeholder="Любой текст"
-          />
-          <datalist id="locationsList"></datalist>
+          <div class="section-title" id="t_logistics">Логистика и Часы</div>
+          <div class="block">
+            <div class="input-row">
+              <label id="l_hours">⏱ На объекте (ч)</label>
+              <input type="number" id="hoursInput" step="0.5" placeholder="0" />
+            </div>
+            <div class="input-row">
+              <label id="l_drive">🚗 За рулем (ч)</label>
+              <input type="number" id="driveInput" step="0.5" placeholder="0" />
+            </div>
+            <div
+              class="input-row"
+              style="border-top: 1px solid rgba(118, 118, 128, 0.15)"
+            >
+              <label id="l_car">🚛 Авто</label>
+              <input
+                type="text"
+                id="carInput"
+                list="carsList"
+                placeholder="VW Passat B6"
+              />
+              <datalist id="carsList"></datalist>
+            </div>
+            <div class="input-row">
+              <label id="l_route">🛣 Маршрут</label>
+              <input type="text" id="routeInput" placeholder="Откуда - Куда" />
+            </div>
+          </div>
+          <button class="btn-main" onclick="sendShift()" id="btn_send_shift">
+            Отправить отчет
+          </button>
         </div>
 
-        <div class="input-row">
-          <label id="l_abroad">🌍 Заграница (EUR)</label>
-          <div class="checkbox-wrapper">
-            <input type="checkbox" id="abroadInput" />
+        <div id="garage" class="content">
+          <div class="polaroid-wrapper">
+            <img
+              src="https://i.imgur.com/vH1Wn0N.png"
+              alt="Кася"
+              class="kasiaAvatar"
+            />
+            <div class="polaroid-caption">W garażu 🚙</div>
+          </div>
+          <div class="section-title">Мой Гараж</div>
+          <div class="block" style="padding: 16px; text-align: center">
+            <p style="font-size: 14px; color: var(--hint-color)">
+              Здесь мы скоро реализуем ручное добавление, управление списком и
+              кнопку распознавания авто по фото!
+            </p>
           </div>
         </div>
-        <div class="input-row">
-          <label id="l_diet">🥪 Командировка (Диета)</label>
-          <div class="checkbox-wrapper">
-            <input type="checkbox" id="dietInput" />
+
+        <div id="route" class="content">
+          <div class="polaroid-wrapper">
+            <img
+              src="https://i.imgur.com/vH1Wn0N.png"
+              alt="Кася"
+              class="kasiaAvatar"
+            />
+            <div class="polaroid-caption">W drodze 🗺️</div>
+          </div>
+          <div class="section-title">Навигация</div>
+          <div class="block" style="padding: 16px; text-align: center">
+            <p style="font-size: 14px; color: var(--hint-color)">
+              Скоро здесь появится интерактивная карта для построения маршрутов
+              и переход в Google Maps.
+            </p>
           </div>
         </div>
-      </div>
 
-      <div class="section-title" id="t_logistics">Логистика и Часы</div>
-      <div class="block">
-        <div class="input-row">
-          <label id="l_hours">⏱ На объекте (ч)</label>
-          <input type="number" id="hoursInput" step="0.5" placeholder="0" />
-        </div>
-        <div class="input-row">
-          <label id="l_drive">🚗 За рулем (ч)</label>
-          <input type="number" id="driveInput" step="0.5" placeholder="0" />
+        <div id="envelope" class="content">
+          <div class="polaroid-wrapper">
+            <img
+              src="https://i.imgur.com/vH1Wn0N.png"
+              alt="Кася"
+              class="kasiaAvatar"
+            />
+            <div class="polaroid-caption">Koperta ✉️</div>
+          </div>
+          <div class="section-title" id="t_audit">
+            📊 Интерактивный аудит ЗП
+          </div>
+          <div class="block">
+            <div class="input-row">
+              <label id="l_month_audit">📅 Месяц</label
+              ><input type="month" id="auditMonth" />
+            </div>
+            <div class="input-row">
+              <label id="l_card">💰 На карту</label
+              ><input type="number" id="cardAmount" placeholder="Сумма в zł" />
+            </div>
+            <button
+              class="btn-main"
+              onclick="sendAuditReq()"
+              id="btn_audit"
+              style="
+                margin-top: 10px;
+                background-color: #34c759;
+                margin-bottom: 10px;
+              "
+            >
+              Посчитать конверт
+            </button>
+          </div>
         </div>
 
-        <div
-          class="input-row"
-          style="border-top: 1px solid rgba(118, 118, 128, 0.15)"
-        >
-          <label id="l_car">🚛 Авто</label>
-          <input
-            type="text"
-            id="carInput"
-            list="carsList"
-            placeholder="VW Passat B6"
-          />
-          <datalist id="carsList"></datalist>
+        <div id="delete" class="content">
+          <div class="polaroid-wrapper">
+            <img
+              src="https://i.imgur.com/vH1Wn0N.png"
+              alt="Кася"
+              class="kasiaAvatar"
+            />
+            <div class="polaroid-caption">Porządki 🗑️</div>
+          </div>
+          <div class="section-title" id="t_history">
+            📜 История и редактирование
+          </div>
+          <div class="block">
+            <div class="input-row">
+              <label id="l_month_history">Месяц</label
+              ><input type="month" id="historyMonth" />
+            </div>
+            <button
+              class="btn-main"
+              onclick="sendHistoryReq()"
+              id="btn_history"
+              style="
+                background-color: #ff9500;
+                margin-top: 10px;
+                margin-bottom: 10px;
+              "
+            >
+              Показать смены
+            </button>
+          </div>
         </div>
 
-        <div class="input-row">
-          <label id="l_route">🛣 Маршрут</label>
-          <input type="text" id="routeInput" placeholder="Откуда - Куда" />
+        <div id="export" class="content">
+          <div class="polaroid-wrapper">
+            <img
+              src="https://i.imgur.com/vH1Wn0N.png"
+              alt="Кася"
+              class="kasiaAvatar"
+            />
+            <div class="polaroid-caption">Raporty 📤</div>
+          </div>
+          <div class="section-title" id="t_export">📥 Экспорт Excel</div>
+          <div class="block">
+            <div class="input-row">
+              <label id="l_month_export">Месяц</label
+              ><input type="month" id="reportMonth" />
+            </div>
+          </div>
+          <button class="btn-main" onclick="sendReportReq()" id="btn_export">
+            Прислать Excel в чат
+          </button>
         </div>
-      </div>
-      <button class="btn-main" onclick="sendShift()" id="btn_send_shift">
-        Отправить отчет
-      </button>
-    </div>
 
-    <div id="reports" class="content">
-      <div class="section-title" id="t_progress">🎯 Прогресс за месяц</div>
-      <div class="block" style="padding: 16px">
-        <svg
-          width="100px"
-          height="80px"
-          viewBox="0 0 100 80"
-          version="1.1"
-          xmlns="http://www.w3.org/2000/svg"
-          style="
-            display: block;
-            margin: 0 auto 15px auto;
-            stroke: #2c3e50;
-            stroke-width: 2;
-            fill: #ffd93b;
-          "
-        >
-          <path
-            d="M50,15 C20,15 5,30 5,45 C5,65 25,75 50,75 C75,75 95,65 95,45 C95,30 80,15 50,15 Z"
-            fill="#ffffff"
-            stroke-width="2"
-          />
-          <path d="M25,65 L25,78" fill="none" />
-          <path d="M35,70 L35,80" fill="none" />
-          <path d="M65,70 L65,80" fill="none" />
-          <path d="M75,65 L75,78" fill="none" />
-          <ellipse
-            cx="50"
-            cy="50"
-            rx="12"
-            ry="10"
-            fill="#ffd93b"
-            stroke-width="2"
-          />
-          <circle cx="45" cy="50" r="2" fill="#2c3e50" />
-          <circle cx="55" cy="50" r="2" fill="#2c3e50" />
-          <circle cx="38" cy="35" r="3" fill="#2c3e50" />
-          <circle cx="62" cy="35" r="3" fill="#2c3e50" />
-          <path d="M25,25 L10,10 L30,20 Z" fill="#ffd93b" stroke-width="2" />
-          <path d="M75,25 L90,10 L70,20 Z" fill="#ffd93b" stroke-width="2" />
-          <rect x="40" y="23" width="20" height="4" rx="2" fill="#2c3e50" />
-        </svg>
-        <div
-          style="
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-          "
-        >
-          <strong id="goalNameDisplay" style="font-size: 16px">Моя цель</strong>
-          <span
-            id="goalTextDisplay"
-            style="color: var(--hint-color); font-size: 14px"
-            >0 / 8600 zł</span
+        <div id="analytics" class="content">
+          <div class="polaroid-wrapper">
+            <img
+              src="https://i.imgur.com/vH1Wn0N.png"
+              alt="Кася"
+              class="kasiaAvatar"
+            />
+            <div class="polaroid-caption">Analiza 📈</div>
+          </div>
+          <div class="section-title" id="t_analytics">📈 Топ объектов</div>
+          <div class="block">
+            <div class="input-row">
+              <label id="l_month_analytics">Месяц</label
+              ><input type="month" id="analyticsMonth" />
+            </div>
+            <button
+              class="btn-main"
+              id="btn_analytics"
+              onclick="sendAnalyticsReq()"
+            >
+              Показать Топ объектов
+            </button>
+          </div>
+        </div>
+
+        <div id="savings" class="content">
+          <div class="polaroid-wrapper">
+            <img
+              src="https://i.imgur.com/vH1Wn0N.png"
+              alt="Кася"
+              class="kasiaAvatar"
+            />
+            <div class="polaroid-caption">Skarbonka 💰</div>
+          </div>
+          <div class="section-title" id="t_progress">🎯 Прогресс за месяц</div>
+          <div class="block" style="padding: 16px">
+            <svg
+              width="100px"
+              height="80px"
+              viewBox="0 0 100 80"
+              version="1.1"
+              xmlns="http://www.w3.org/2000/svg"
+              style="
+                display: block;
+                margin: 0 auto 15px auto;
+                stroke: #2c3e50;
+                stroke-width: 2;
+                fill: #ffd93b;
+              "
+            >
+              <path
+                d="M50,15 C20,15 5,30 5,45 C5,65 25,75 50,75 C75,75 95,65 95,45 C95,30 80,15 50,15 Z"
+                fill="#ffffff"
+                stroke-width="2"
+              />
+              <path d="M25,65 L25,78" fill="none" />
+              <path d="M35,70 L35,80" fill="none" />
+              <path d="M65,70 L65,80" fill="none" />
+              <path d="M75,65 L75,78" fill="none" />
+              <ellipse
+                cx="50"
+                cy="50"
+                rx="12"
+                ry="10"
+                fill="#ffd93b"
+                stroke-width="2"
+              />
+              <circle cx="45" cy="50" r="2" fill="#2c3e50" />
+              <circle cx="55" cy="50" r="2" fill="#2c3e50" />
+              <circle cx="38" cy="35" r="3" fill="#2c3e50" />
+              <circle cx="62" cy="35" r="3" fill="#2c3e50" />
+              <path
+                d="M25,25 L10,10 L30,20 Z"
+                fill="#ffd93b"
+                stroke-width="2"
+              />
+              <path
+                d="M75,25 L90,10 L70,20 Z"
+                fill="#ffd93b"
+                stroke-width="2"
+              />
+              <rect x="40" y="23" width="20" height="4" rx="2" fill="#2c3e50" />
+            </svg>
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 8px;
+              "
+            >
+              <strong id="goalNameDisplay" style="font-size: 16px"
+                >Моя цель</strong
+              >
+              <span
+                id="goalTextDisplay"
+                style="color: var(--hint-color); font-size: 14px"
+                >0 / 0 zł</span
+              >
+            </div>
+            <div
+              style="
+                background: rgba(118, 118, 128, 0.12);
+                border-radius: 8px;
+                height: 16px;
+                overflow: hidden;
+                position: relative;
+              "
+            >
+              <div
+                id="goalProgressBar"
+                style="
+                  background: linear-gradient(90deg, #ff9500, #34c759);
+                  width: 0%;
+                  height: 100%;
+                  transition: width 1s ease-in-out;
+                "
+              ></div>
+            </div>
+            <div
+              id="goalMotivation"
+              style="
+                text-align: center;
+                font-size: 13px;
+                color: var(--hint-color);
+                margin-top: 10px;
+              "
+            >
+              Загружаем данные...
+            </div>
+          </div>
+        </div>
+
+        <div id="settings" class="content">
+          <div class="polaroid-wrapper">
+            <img
+              src="https://i.imgur.com/vH1Wn0N.png"
+              alt="Кася"
+              class="kasiaAvatar"
+            />
+            <div class="polaroid-caption">Ustawienia ⚙️</div>
+          </div>
+
+          <div class="section-title" id="t_lang">Язык интерфейса</div>
+          <div class="block">
+            <div class="input-row">
+              <label id="l_lang_select">🌐 Язык</label>
+              <select id="langInput" onchange="changeLanguage()">
+                <option value="PL">🇵🇱 Polski</option>
+                <option value="RUS">🇷🇺 Русский</option>
+                <option value="UKR">🇺🇦 Українська</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="section-title" id="t_goal">🎯 Моя финансовая цель</div>
+          <div class="block">
+            <div class="input-row">
+              <label id="l_goal_name">Название</label
+              ><input type="text" id="goalNameInput" placeholder="Дом у моря" />
+            </div>
+            <div class="input-row">
+              <label id="l_goal_sum">Сумма (zł)</label
+              ><input type="number" id="goalTargetInput" placeholder="8000" />
+            </div>
+            <div class="input-row">
+              <label id="l_goal_date">Срок?</label
+              ><input type="date" id="goalDeadlineInput" />
+            </div>
+          </div>
+
+          <div class="section-title" id="t_profile">
+            Финансовый профиль (Ставки)
+          </div>
+          <div class="block">
+            <div class="input-row">
+              <label id="l_brutto">💵 Brutto (zł/h)</label
+              ><input
+                type="number"
+                id="baseRateInput"
+                placeholder="0.0"
+                step="0.1"
+              />
+            </div>
+            <div class="input-row">
+              <label id="l_env">✉️ Конверт (zł/h)</label
+              ><input
+                type="number"
+                id="extraRateInput"
+                placeholder="0.0"
+                step="0.1"
+              />
+            </div>
+            <div class="input-row">
+              <label id="l_rate_eur">💶 Ставка (EUR/h)</label
+              ><input
+                type="number"
+                id="eurRateInput"
+                placeholder="0.0"
+                step="0.1"
+              />
+            </div>
+            <div class="input-row">
+              <label id="l_drive_zl">🚗 Руль (zł/h)</label
+              ><input
+                type="number"
+                id="driveRateInput"
+                placeholder="0.0"
+                step="0.1"
+              />
+            </div>
+            <div class="input-row">
+              <label id="l_drive_eur">🚙 Руль (EUR/h)</label
+              ><input
+                type="number"
+                id="driveEurRateInput"
+                placeholder="0.0"
+                step="0.1"
+              />
+            </div>
+          </div>
+
+          <button
+            class="btn-main"
+            onclick="sendSettings()"
+            id="btn_save_settings"
+            style="margin-top: 20px"
           >
-        </div>
-        <div
-          style="
-            background: rgba(118, 118, 128, 0.12);
-            border-radius: 8px;
-            height: 16px;
-            overflow: hidden;
-            position: relative;
-          "
-        >
-          <div
-            id="goalProgressBar"
-            style="
-              background: linear-gradient(90deg, #ff9500, #34c759);
-              width: 0%;
-              height: 100%;
-              transition: width 1s ease-in-out;
-            "
-          ></div>
-        </div>
-        <div
-          id="goalMotivation"
-          style="
-            text-align: center;
-            font-size: 13px;
-            color: var(--hint-color);
-            margin-top: 10px;
-          "
-        >
-          Загружаем данные...
+            Сохранить настройки
+          </button>
         </div>
       </div>
-
-      <div class="section-title" id="t_audit">📊 Интерактивный аудит ЗП</div>
-      <div class="block">
-        <div class="input-row">
-          <label id="l_month_audit">📅 Месяц</label
-          ><input type="month" id="auditMonth" />
+      <div class="planner-tabs">
+        <div class="v-tab active" id="tab_shift" onclick="openTab('shift')">
+          📝
         </div>
-        <div class="input-row">
-          <label id="l_card">💰 Пришло на карту</label
-          ><input type="number" id="cardAmount" placeholder="Сумма в zł" />
+        <div class="v-tab" id="tab_garage" onclick="openTab('garage')">🚗</div>
+        <div class="v-tab" id="tab_route" onclick="openTab('route')">📍</div>
+        <div class="v-tab" id="tab_envelope" onclick="openTab('envelope')">
+          ✉️
         </div>
-        <button
-          class="btn-main"
-          onclick="sendAuditReq()"
-          id="btn_audit"
-          style="
-            margin-top: 10px;
-            background-color: #34c759;
-            margin-bottom: 10px;
-          "
-        >
-          Посчитать конверт
-        </button>
-      </div>
-
-      <div class="section-title" id="t_history">
-        📜 История и редактирование
-      </div>
-      <div class="block">
-        <div class="input-row">
-          <label id="l_month_history">Выбери месяц</label
-          ><input type="month" id="historyMonth" />
+        <div class="v-tab" id="tab_delete" onclick="openTab('delete')">🗑️</div>
+        <div class="v-tab" id="tab_export" onclick="openTab('export')">📤</div>
+        <div class="v-tab" id="tab_analytics" onclick="openTab('analytics')">
+          📊
         </div>
-        <button
-          class="btn-main"
-          onclick="sendHistoryReq()"
-          id="btn_history"
-          style="
-            background-color: #ff9500;
-            margin-top: 10px;
-            margin-bottom: 10px;
-          "
-        >
-          Показать смены
-        </button>
-      </div>
-
-      <div class="section-title" id="t_analytics">
-        📈 Топ объектов (Аналитика)
-      </div>
-      <div class="block">
-        <div class="input-row">
-          <label id="l_month_analytics">Выбери месяц</label
-          ><input type="month" id="analyticsMonth" />
+        <div class="v-tab" id="tab_savings" onclick="openTab('savings')">
+          💰
         </div>
-        <button
-          class="btn-main"
-          id="btn_analytics"
-          onclick="sendAnalyticsReq()"
-        >
-          Показать Топ объектов
-        </button>
-      </div>
-
-      <div class="section-title" id="t_export">📥 Экспорт Excel</div>
-      <div class="block">
-        <div class="input-row">
-          <label id="l_month_export">Выбери месяц</label
-          ><input type="month" id="reportMonth" />
+        <div class="v-tab" id="tab_settings" onclick="openTab('settings')">
+          ⚙️
         </div>
       </div>
-      <button class="btn-main" onclick="sendReportReq()" id="btn_export">
-        Прислать Excel в чат
-      </button>
     </div>
-
-    <div id="settings" class="content">
-      <div class="section-title" id="t_lang">Язык интерфейса</div>
-      <div class="block">
-        <div class="input-row">
-          <label id="l_lang_select">🌐 Язык</label>
-          <select id="langInput" onchange="changeLanguage()">
-            <option value="PL">🇵🇱 Polski</option>
-            <option value="RUS">🇷🇺 Русский</option>
-            <option value="UKR">🇺🇦 Українська</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="section-title" id="t_goal">🎯 Моя финансовая цель</div>
-      <div class="block">
-        <div class="input-row">
-          <label id="l_goal_name">Название</label
-          ><input type="text" id="goalNameInput" placeholder="Дом у моря" />
-        </div>
-        <div class="input-row">
-          <label id="l_goal_sum">Сумма (zł)</label
-          ><input type="number" id="goalTargetInput" placeholder="8000" />
-        </div>
-        <div class="input-row">
-          <label id="l_goal_date">К какому сроку?</label
-          ><input type="date" id="goalDeadlineInput" />
-        </div>
-      </div>
-
-      <div class="section-title" id="t_profile">
-        Финансовый профиль (Ставки)
-      </div>
-      <div class="block">
-        <div class="input-row">
-          <label id="l_brutto">💵 Brutto (zł/h)</label
-          ><input
-            type="number"
-            id="baseRateInput"
-            placeholder="0.0"
-            step="0.1"
-          />
-        </div>
-        <div class="input-row">
-          <label id="l_env">✉️ Конверт (zł/h)</label
-          ><input
-            type="number"
-            id="extraRateInput"
-            placeholder="0.0"
-            step="0.1"
-          />
-        </div>
-        <div class="input-row">
-          <label id="l_rate_eur">💶 Ставка (EUR/h)</label
-          ><input
-            type="number"
-            id="eurRateInput"
-            placeholder="0.0"
-            step="0.1"
-          />
-        </div>
-        <div class="input-row">
-          <label id="l_drive_zl">🚗 Руль (zł/h)</label
-          ><input
-            type="number"
-            id="driveRateInput"
-            placeholder="0.0"
-            step="0.1"
-          />
-        </div>
-        <div class="input-row">
-          <label id="l_drive_eur">🚙 Руль (EUR/h)</label
-          ><input
-            type="number"
-            id="driveEurRateInput"
-            placeholder="0.0"
-            step="0.1"
-          />
-        </div>
-      </div>
-
-      <div class="section-title" id="t_support">☕ Поддержать проект</div>
-      <div class="block" style="padding: 16px; text-align: center">
-        <p
-          id="t_support_desc"
-          style="
-            font-size: 14px;
-            color: var(--hint-color);
-            margin-bottom: 12px;
-            margin-top: 0;
-          "
-        >
-          Бот экономит твое время на расчетах? Угости ИИ-бухгалтершу кофе!
-        </p>
-        <button
-          class="btn-main"
-          type="button"
-          onclick="
-            window.Telegram.WebApp.openLink('https://buymeacoffee.com/bocxodv')
-          "
-          style="
-            background-color: #ff813f;
-            color: #ffffff;
-            font-weight: bold;
-            margin-bottom: 0;
-          "
-        >
-          ☕ Buy Me a Coffee
-        </button>
-      </div>
-      <button
-        class="btn-main"
-        onclick="sendSettings()"
-        id="btn_save_settings"
-        style="margin-top: 20px"
-      >
-        Сохранить изменения
-      </button>
-    </div>
-
-    <script src="script.js?v=5"></script>
+    <script src="script.js?v=6"></script>
   </body>
 </html>
