@@ -67,6 +67,8 @@ body {
     width: 45px;
     padding-top: 15px;
     overflow-y: auto;
+    flex-shrink: 0;
+    /* ЗАПРЕЩАЕМ СЖИМАТЬСЯ */
 }
 
 /* Отдельная боковая закладка */
@@ -85,12 +87,15 @@ body {
     position: relative;
     left: -2px;
     z-index: 1;
+    width: 40px;
+    /* Фиксируем базовую ширину */
+    box-sizing: border-box;
 }
 
 .v-tab.active {
     background: #fdfbf7;
-    width: 45px;
-    /* Выдвигается */
+    width: 47px;
+    /* Фиксируем ширину при выдвижении */
     z-index: 3;
     border-left: 2px solid #fdfbf7;
     box-shadow: 4px 2px 8px rgba(0, 0, 0, 0.12);
