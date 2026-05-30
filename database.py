@@ -40,6 +40,7 @@ async def init_db():
                 month_year TEXT,
                 day_of_week TEXT,
                 status TEXT,
+                location TEXT,
                 car TEXT,
                 route TEXT,
                 work_hours NUMERIC,
