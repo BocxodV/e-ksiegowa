@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 from datetime import datetime, timedelta
 
 from aiogram import Bot, Dispatcher, types, F
@@ -8,11 +9,13 @@ from aiogram.types import FSInputFile, MenuButtonWebApp, WebAppInfo, ReplyKeyboa
 from aiogram.fsm.context import FSMContext
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
+# === НОВЫЕ ИМПОРТЫ ДЛЯ WEBHOOK ===
+from aiohttp import web
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
+
 # === НАСТРОЙКА ЛОГИРОВАНИЯ ===
 logging.basicConfig(
     level=logging.INFO,
-    filename="bot_errors.log",
-    filemode="a",
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     encoding="utf-8"
 )
@@ -37,16 +40,21 @@ dp = Dispatcher()
 
 # Регистрация всех модулей
 dp.include_router(reports.router)
-dp.include_router(vision.router) # Модуль компьютерного зрения
-dp.include_router(voice.router) # Модуль обработки голосовых сообщений
-dp.include_router(webapp.router) # Модуль Web App
+dp.include_router(vision.router) 
+dp.include_router(voice.router) 
+dp.include_router(webapp.router) 
+
+# === НАСТРОЙКИ WEBHOOK ===
+WEBHOOK_PATH = "/webhook"
+# Сюда попадет ссылка от Google Cloud Run (настроим на сервере)
+WEBHOOK_URL = os.getenv("WEBHOOK_URL", "") 
 
 @dp.message(CommandStart())
 async def handle_start(message: types.Message):
     user_id = message.from_user.id
     profile = await get_user_profile(user_id)
     
-    # Авто-перехват (остается без изменений)
+    # Авто-перехват 
     tg_lang = message.from_user.language_code 
     if tg_lang:
         if tg_lang.startswith('pl'): user_lang = "PL"
@@ -72,7 +80,7 @@ async def handle_start(message: types.Message):
         resize_keyboard=True 
     )
     
-    # НОВОЕ: Создаем Inline-кнопки для выбора языка
+    # Создаем Inline-кнопки для выбора языка
     lang_kb = InlineKeyboardMarkup(
         inline_keyboard=[
             [
@@ -83,7 +91,7 @@ async def handle_start(message: types.Message):
         ]
     )
     
-    # НОВОЕ: Меняем имя файла на kasia_welcome.png с точным локальным путем
+    # Меняем имя файла на kasia_welcome.png с точным локальным путем
     photo_file = FSInputFile("web/arts/kasia_welcome.png")
     await message.answer_photo(
         photo=photo_file,
@@ -100,17 +108,62 @@ async def handle_start(message: types.Message):
         reply_markup=markup
     )
 
-async def main():
-    await init_db() 
+# === ЖИЗНЕННЫЙ ЦИКЛ БОТА ===
+async def on_startup(bot: Bot):
+    """Функция выполняется при запуске веб-сервера."""
+    logger.info("⏳ [ШАГ 1] Запуск on_startup. Подключаемся к базе Neon...")
     
+    try:
+        await init_db() 
+        logger.info("✅ [ШАГ 2] База данных успешно подключена и инициализирована!")
+    except Exception as e:
+        logger.error(f"❌ Ошибка подключения к БД: {e}")
+    
+    logger.info("⏳ [ШАГ 3] Запуск планировщика задач...")
     scheduler = AsyncIOScheduler(timezone="Europe/Warsaw")
-    # Твои задачи планировщика остаются активными
     scheduler.start()
+    logger.info("✅ [ШАГ 4] Планировщик запущен!")
     
-    logger.info("Бот запущен в штатном режиме.")
-    
-    await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot)
+    if WEBHOOK_URL:
+        logger.info(f"⏳ [ШАГ 5] Отправляем запрос в Telegram: {WEBHOOK_URL}{WEBHOOK_PATH}")
+        try:
+            await bot.set_webhook(f"{WEBHOOK_URL}{WEBHOOK_PATH}", drop_pending_updates=True)
+            logger.info("✅ [ШАГ 6] Webhook успешно привязан!")
+        except Exception as e:
+            logger.error(f"❌ Ошибка установки Webhook: {e}")
+    else:
+        logger.warning("⚠️ WEBHOOK_URL не задан! Бот запущен, но не будет получать сообщения.")
+
+async def on_shutdown(bot: Bot):
+    """Функция выполняется при выключении веб-сервера."""
+    logger.info("Выключаем бота...")
+    await bot.delete_webhook()
+
+def main():
+    # 1. Регистрируем события старта и остановки
+    dp.startup.register(on_startup)
+    dp.shutdown.register(on_shutdown)
+
+    # 2. Создаем веб-сервер aiohttp
+    app = web.Application()
+
+    # 3. Настраиваем обработчик запросов от Telegram
+    webhook_requests_handler = SimpleRequestHandler(
+        dispatcher=dp,
+        bot=bot,
+    )
+    # Слушаем запросы по пути /webhook
+    webhook_requests_handler.register(app, path=WEBHOOK_PATH)
+
+    # 4. Привязываем наше приложение к диспетчеру
+    setup_application(app, dp, bot=bot)
+
+    # 5. Получаем порт от Google Cloud (по умолчанию 8080)
+    port = int(os.getenv("PORT", 8080))
+
+    # 6. Запускаем сервер
+    logger.info(f"🚀 Запускаем веб-сервер на порту {port}...")
+    web.run_app(app, host="0.0.0.0", port=port)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
