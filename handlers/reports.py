@@ -5,7 +5,6 @@ from openpyxl.styles import Font, PatternFill, Alignment
 from aiogram import Router, types, F, Bot
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, FSInputFile
 
-# Импортируем наши новые асинхронные функции
 from database import get_user_profile, get_available_months, get_work_logs_for_month
 from texts import TRANSLATIONS
 
@@ -14,10 +13,12 @@ router = Router()
 @router.message(F.text.in_(["📊 Mój raport", "📊 Мій звіт", "📊 Мой отчет"]))
 async def ask_report_month(message: types.Message):
     user_id = message.from_user.id
-    profile = await get_user_profile(user_id) # Добавили await
-    t = TRANSLATIONS.get(profile["lang"], TRANSLATIONS["PL"])
+    profile = await get_user_profile(user_id)
+    
+    # ФИКС 1: Безопасное получение языка
+    user_lang = profile.get("lang", "RUS")
+    t = TRANSLATIONS.get(user_lang, TRANSLATIONS["RUS"])
 
-    # Запрашиваем месяцы асинхронно
     months = await get_available_months(user_id)
 
     if not months:
@@ -40,10 +41,12 @@ async def generate_excel_report(callback: types.CallbackQuery = None, target_use
         user_id = target_user_id
         selected_month = target_month
 
-    profile = await get_user_profile(user_id) # Добавили await
-    t = TRANSLATIONS.get(profile["lang"], TRANSLATIONS["PL"])
+    profile = await get_user_profile(user_id)
+    
+    # ФИКС 1: Безопасное получение языка
+    user_lang = profile.get("lang", "RUS")
+    t = TRANSLATIONS.get(user_lang, TRANSLATIONS["RUS"])
 
-    # Получаем логи асинхронно
     rows = await get_work_logs_for_month(user_id, selected_month)
 
     if not rows:
@@ -71,8 +74,7 @@ async def generate_excel_report(callback: types.CallbackQuery = None, target_use
         cell.fill = header_fill
         cell.alignment = center_aligned
 
-    # === ИЗМЕНЕНИЕ 1: Добавили счетчик total_drive_hours ===
-    total_net, total_gross, total_bonuses, total_hours, total_drive_hours = 0, 0, 0, 0, 0
+    total_net, total_gross, total_bonuses, total_hours, total_drive_hours = 0.0, 0.0, 0.0, 0.0, 0.0
 
     for row in rows:
         is_trip_text = "✅" if row[10] == 1 else ""
@@ -95,22 +97,23 @@ async def generate_excel_report(callback: types.CallbackQuery = None, target_use
             else:
                 cell.alignment = center_aligned
 
-        total_hours += row[6]
-        # === ИЗМЕНЕНИЕ 2: Суммируем часы за рулем ===
-        total_drive_hours += row[7] 
-        total_bonuses += row[11]
-        total_gross += row[12]
-        total_net += row[13]
+        # ФИКС 2: Страховка от пустых ячеек (None) из БД
+        total_hours += float(row[6] or 0)
+        total_drive_hours += float(row[7] or 0)
+        total_bonuses += float(row[11] or 0)
+        total_gross += float(row[12] or 0)
+        total_net += float(row[13] or 0)
 
     ws.append([]) 
 
-    card_money = total_gross * profile["tax_coeff"]
+    # ФИКС 3: Безопасное получение коэффициента (если его нет в профиле, берем 0.72)
+    tax_coeff = profile.get("tax_coeff", 0.72)
+    card_money = total_gross * tax_coeff
     envelope_money = total_net - card_money
     if envelope_money < 0: envelope_money = 0
 
-    # === ИЗМЕНЕНИЕ 3: Выводим total_drive_hours в 8-ю колонку ===
     total_row = [
-        "", "", "", "", t["total_month"], "", total_hours, total_drive_hours, "", "", "",
+        "", "", "", "", t["total_month"], "", round(total_hours, 1), round(total_drive_hours, 1), "", "", "",
         round(total_bonuses, 2), round(total_gross, 2), round(total_net, 2)
     ]
     ws.append(total_row)
@@ -136,25 +139,28 @@ async def generate_excel_report(callback: types.CallbackQuery = None, target_use
         max_length = max((len(str(cell.value)) for cell in col if cell.value is not None), default=0)
         ws.column_dimensions[col[0].column_letter].width = (max_length * 1.25) + 3
 
-    # === ГЛАВНЫЙ ФИКС ДЛЯ GOOGLE CLOUD RUN ===
-    # Сохраняем файл во временную директорию /tmp/
+    # Сохраняем во временную директорию /tmp/ для Google Cloud Run
     file_name = f"/tmp/Zarobki_{selected_month}.xlsx"
     
-    wb.save(file_name)
-    document = FSInputFile(file_name)
-
-    caption_text = t["excel_caption"].format(
-        month=selected_month,
-        hours=total_hours,
-        net=round(total_net, 2)
-    )
-
+    # ФИКС 4: Полноценный блок try-except для защиты сохранения файла
     try:
+        wb.save(file_name)
+        document = FSInputFile(file_name)
+
+        caption_text = t["excel_caption"].format(
+            month=selected_month,
+            hours=round(total_hours, 1),
+            net=round(total_net, 2)
+        )
+
         if callback:
             await callback.message.answer_document(document, caption=caption_text, parse_mode="Markdown")
         elif bot:
             await bot.send_document(user_id, document, caption=caption_text, parse_mode="Markdown")
+            
     except Exception as e:
-        print(f"Ошибка отправки: {e}")
+        print(f"Ошибка сохранения или отправки отчета: {e}")
     finally:
-        os.remove(file_name)
+        # Удаляем файл только если он реально был создан
+        if os.path.exists(file_name):
+            os.remove(file_name)
