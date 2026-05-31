@@ -14,10 +14,8 @@ from aiogram.types import (
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-# ИИ-магия для мотивации
-import google.generativeai as genai
-
-from texts import TRANSLATIONS
+# Подтягиваем локальный словарь мотиваций вместо API Gemini
+from texts import TRANSLATIONS, get_random_motivation
 from keyboards import get_support_keyboard 
 from nbp_service import get_eur_rate
 from database import (
@@ -39,51 +37,6 @@ logger = logging.getLogger(__name__)
 
 WEB_APP_URL = "https://e-ksiegowa.vercel.app/"
 
-# === НАСТРОЙКА ИИ GEMINI 3.5 FLASH ===
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
-
-async def get_dynamic_motivation(user_lang="RUS"):
-    """Асинхронно генерирует уникальную цитату с защитой от таймаута для Cloud Run"""
-    fallback_quotes = {
-        "RUS": "✨ Отличная работа! Время заслуженного отдыха.",
-        "PL": "✨ Świetna robota! Czas na zasłużony odpoczynek.",
-        "UKR": "✨ Відмінна робота! Час для заслуженого відпочинку.",
-        "EN": "✨ Great job! Time for a well-deserved rest."
-    }
-    fallback = fallback_quotes.get(user_lang, fallback_quotes["RUS"])
-
-    if not GEMINI_API_KEY:
-        return fallback
-
-    try:
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        
-        prompt = (
-            "Ты ИИ-ассистент. Сгенерируй одну короткую, уникальную и вдохновляющую "
-            "фразу (максимум 1-2 предложения) для человека, завершившего рабочий день. "
-            "Никогда не повторяйся. Фраза должна подходить любому человеку. "
-            "Без кавычек, без приветствий. Тон: теплый и поддерживающий."
-        )
-        
-        if user_lang == "PL": prompt += "Напиши на польском языке."
-        elif user_lang == "UKR": prompt += "Напиши на украинском языке."
-        else: prompt += "Напиши на русском языке."
-
-        # МАГИЯ CLOUD RUN: Ждем ответ максимум 3 секунды!
-        response = await asyncio.wait_for(
-            model.generate_content_async(prompt),
-            timeout=3.0
-        )
-        return f"✨ {response.text.strip()}"
-        
-    except asyncio.TimeoutError:
-        logger.warning("Gemini API timeout! Используем резервную цитату.")
-        return fallback
-    except Exception as e:
-        logger.error(f"Ошибка Gemini: {e}")
-        return fallback
 
 class SavingsState(StatesGroup):
     waiting_for_amount = State()
@@ -253,7 +206,7 @@ async def web_app_handler(message: types.Message):
             total_net, total_gross, total_loss, total_cash_diff = 0, 0, 0, 0
             ai_advice = ""
             
-            # === СТРОГО ТВОЯ МАТЕМАТИКА (ВОЗВРАЩЕНО ИЗ webapp_2.py) ===
+            # === СТРОГО ТВОЯ МАТЕМАТИКА ===
             applied_nbp_rate = await get_eur_rate(data.get("date")) if is_abroad_actual else None
             is_trip_int = 1 if data.get("is_trip") else 0
             eff_rate = profile.get("extra_rate", 0)
@@ -344,8 +297,8 @@ async def web_app_handler(message: types.Message):
             if user_lang == "PL": day_name = ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"][day_idx]
             elif user_lang == "UKR": day_name = ["Понеділок", "Вівторок", "Середа", "Четвер", "П'ятниця", "Субота", "Неділя"][day_idx]
 
-            # Получаем уникальную цитату от Gemini 3.5 Flash
-            motivation_text = await get_dynamic_motivation(user_lang)
+            # Получаем уникальную цитату из локального словаря! (Мгновенно, без задержек)
+            motivation_text = get_random_motivation(user_lang)
 
             # Эстетичный финальный чек
             tax_coeff_val = profile.get("tax_coeff", 0.71)
@@ -391,7 +344,7 @@ async def web_app_handler(message: types.Message):
                 text=final_text, 
                 reply_markup=markup, 
                 parse_mode="HTML",
-                link_preview_options=LinkPreviewOptions(is_disabled=True) # <--- Отключаем огромный баннер
+                link_preview_options=LinkPreviewOptions(is_disabled=True) # Отключаем огромный баннер
                 )
             
         elif data.get("action") == "update_settings":

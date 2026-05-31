@@ -1,5 +1,7 @@
 # texts.py
 
+import random
+
 TRANSLATIONS = {
     "RUS": {
         "saving": "⏳ Сохраняю...",
@@ -149,3 +151,77 @@ TRANSLATIONS = {
         "welcome_text": "Cześć! Jestem Twoją księgową AI 👩‍💼\n\nPomogę Ci prowadzić ewidencję zmian, logistyki i dokładnie obliczę Twoją wypłatę (brutto, netto, a nawet «w kopercie»).\n\nAby zacząć, kliknij przycisk **«📱 Panel»** w menu w lewym dolnym rogu! 👇"
     }
 }
+
+MOTIVATIONS = {
+    "RUS": [
+        "✨ Отличная работа! Время заслуженного отдыха.",
+        "✨ Капля за каплей — получается море. Ты на шаг ближе к цели!",
+        "✨ Сегодняшний труд — это завтрашняя свобода. Отдыхай!",
+        "✨ Смена закрыта успешно. Гордись собой и своим результатом!",
+        "✨ Еще один день, еще один уверенный шаг к мечте.",
+        "✨ Идеальная дисциплина. Теперь можно расслабиться.",
+        "✨ Твои усилия сегодня создают твое спокойное завтра.",
+        "✨ Отличный результат! Пусть вечер будет уютным.",
+        "✨ Цель всё ближе. Ты большой молодец!",
+        "✨ Завершена еще одна глава твоего пути. Выдыхай.",
+        "✨ Время выдохнуть, перезагрузиться и набраться сил.",
+        "✨ Прекрасно потрудился! Наслаждайся свободным временем.",
+        "✨ Твоя настойчивость — твой главный капитал.",
+        "✨ Оставь работу на работе. Сейчас время только для себя.",
+        "✨ Маленькие, но регулярные шаги ведут к великим достижениям.",
+        "✨ Гордись проделанной работой и отдыхай душой.",
+        "✨ Баланс важен: ты отлично поработал, теперь отлично отдохни.",
+        "✨ Сегодня ты сделал максимум. Спасибо за труд!",
+        "✨ За каждым усилием следует награда. Твоя — это спокойный вечер.",
+        "✨ Смена сдана. Впереди только приятные моменты!"
+    ],
+    "PL": [
+        "✨ Świetna robota! Czas na zasłużony odpoczynek.",
+        "✨ Kropla do kropli, a zbierze się morze. Jesteś o krok bliżej celu!",
+        "✨ Dzisiejsza praca to jutrzejsza wolność. Odpoczywaj!",
+        "✨ Zmiana zakończona sukcesem. Bądź z siebie dumny!",
+        "✨ Kolejny dzień, kolejny pewny krok w stronę marzeń.",
+        "✨ Idealna dyscyplina. Teraz możesz się zrelaksować.",
+        "✨ Twoje dzisiejsze wysiłki tworzą twoje spokojne jutro.",
+        "✨ Świetny wynik! Niech ten wieczór będzie przytulny.",
+        "✨ Cel jest coraz bliżej. Dobra robota!",
+        "✨ Kolejny rozdział twojej drogi za tobą. Odetchnij.",
+        "✨ Czas wziąć głęboki oddech, zresetować się i nabrać sił.",
+        "✨ Świetnie się spisałeś! Ciesz się czasem wolnym.",
+        "✨ Twoja wytrwałość to twój największy kapitał.",
+        "✨ Zostaw pracę w pracy. Teraz czas tylko dla ciebie.",
+        "✨ Małe, ale regularne kroki prowadzą do wielkich osiągnięć.",
+        "✨ Bądź dumny z wykonanej pracy i odpocznij.",
+        "✨ Równowaga jest ważna: świetnie popracowałeś, teraz świetnie odpocznij.",
+        "✨ Dzisiaj dałeś z siebie wszystko. Dziękuję za twoją pracę!",
+        "✨ Po każdym wysiłku przychodzi nagroda. Twoją jest spokojny wieczór.",
+        "✨ Zmiana zdana. Przed tobą tylko miłe chwile!"
+    ],
+    "UKR": [
+        "✨ Відмінна робота! Час для заслуженого відпочинку.",
+        "✨ Крапля за краплею — виходить море. Ти на крок ближче до мети!",
+        "✨ Сьогоднішня праця — це завтрашня свобода. Відпочивай!",
+        "✨ Зміна закрита успішно. Пишайся собою та своїм результатом!",
+        "✨ Ще один день, ще один впевнений крок до мрії.",
+        "✨ Ідеальна дисципліна. Тепер можна розслабитися.",
+        "✨ Твої зусилля сьогодні створюють твоє спокійне завтра.",
+        "✨ Чудовий результат! Нехай вечір буде затишним.",
+        "✨ Мета все ближче. Ти молодець!",
+        "✨ Завершена ще одна глава твого шляху. Видихай.",
+        "✨ Час видихнути, перезавантажитися та набратися сил.",
+        "✨ Чудово попрацював! Насолоджуйся вільним часом.",
+        "✨ Твоя наполегливість — твій головний капітал.",
+        "✨ Залиш роботу на роботі. Зараз час тільки для себе.",
+        "✨ Маленькі, але регулярні кроки ведуть до великих досягнень.",
+        "✨ Пишайся виконаною роботою і відпочивай душею.",
+        "✨ Баланс важливий: ти чудово попрацював, тепер чудово відпочинь.",
+        "✨ Сьогодні ти зробив максимум. Дякую за працю!",
+        "✨ За кожним зусиллям слідує нагорода. Твоя — це спокійний вечір.",
+        "✨ Зміна здана. Попереду тільки приємні моменти!"
+    ],
+}
+
+def get_random_motivation(lang_code="RUS"):
+    """Возвращает случайную цитату из словаря по коду языка."""
+    quotes = MOTIVATIONS.get(lang_code, MOTIVATIONS["RUS"])
+    return random.choice(quotes)
