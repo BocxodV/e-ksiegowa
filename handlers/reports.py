@@ -1,9 +1,9 @@
 # handlers/reports.py
-import os
+import io
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
 from aiogram import Router, types, F, Bot
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, FSInputFile
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, BufferedInputFile
 
 from database import get_user_profile, get_available_months, get_work_logs_for_month
 from texts import TRANSLATIONS
@@ -15,7 +15,6 @@ async def ask_report_month(message: types.Message):
     user_id = message.from_user.id
     profile = await get_user_profile(user_id)
     
-    # ФИКС 1: Безопасное получение языка
     user_lang = profile.get("lang", "RUS")
     t = TRANSLATIONS.get(user_lang, TRANSLATIONS["RUS"])
 
@@ -32,10 +31,12 @@ async def ask_report_month(message: types.Message):
 
 @router.callback_query(F.data.startswith("report_"))
 async def generate_excel_report(callback: types.CallbackQuery = None, target_user_id=None, target_month=None, bot: Bot = None):
+    # ПЕРЕХВАТЧИК: Отправляем уведомление пользователю, что начали работу
     if callback:
         user_id = callback.from_user.id
         selected_month = callback.data.split("_")[1]
         await callback.message.delete()
+        # Если ты используешь свое сообщение "⏳ Формирую отчет...", добавь его сюда!
         await callback.bot.send_chat_action(chat_id=callback.message.chat.id, action="upload_document")
     else:
         user_id = target_user_id
@@ -43,7 +44,6 @@ async def generate_excel_report(callback: types.CallbackQuery = None, target_use
 
     profile = await get_user_profile(user_id)
     
-    # ФИКС 1: Безопасное получение языка
     user_lang = profile.get("lang", "RUS")
     t = TRANSLATIONS.get(user_lang, TRANSLATIONS["RUS"])
 
@@ -97,7 +97,6 @@ async def generate_excel_report(callback: types.CallbackQuery = None, target_use
             else:
                 cell.alignment = center_aligned
 
-        # ФИКС 2: Страховка от пустых ячеек (None) из БД
         total_hours += float(row[6] or 0)
         total_drive_hours += float(row[7] or 0)
         total_bonuses += float(row[11] or 0)
@@ -106,7 +105,6 @@ async def generate_excel_report(callback: types.CallbackQuery = None, target_use
 
     ws.append([]) 
 
-    # ФИКС 3: Безопасное получение коэффициента (если его нет в профиле, берем 0.72)
     tax_coeff = profile.get("tax_coeff", 0.72)
     card_money = total_gross * tax_coeff
     envelope_money = total_net - card_money
@@ -139,28 +137,30 @@ async def generate_excel_report(callback: types.CallbackQuery = None, target_use
         max_length = max((len(str(cell.value)) for cell in col if cell.value is not None), default=0)
         ws.column_dimensions[col[0].column_letter].width = (max_length * 1.25) + 3
 
-    # Сохраняем во временную директорию /tmp/ для Google Cloud Run
-    file_name = f"/tmp/Zarobki_{selected_month}.xlsx"
+    # === ОБЛАЧНАЯ МАГИЯ: Сохраняем в оперативную память (RAM) ===
+    file_buffer = io.BytesIO()
+    wb.save(file_buffer)
+    file_buffer.seek(0) # Перематываем "пленку" в начало файла
     
-    # ФИКС 4: Полноценный блок try-except для защиты сохранения файла
+    file_name = f"Zarobki_{selected_month}.xlsx"
+    document = BufferedInputFile(file_buffer.read(), filename=file_name)
+
+    caption_text = t["excel_caption"].format(
+        month=selected_month,
+        hours=round(total_hours, 1),
+        net=round(total_net, 2)
+    )
+
     try:
-        wb.save(file_name)
-        document = FSInputFile(file_name)
-
-        caption_text = t["excel_caption"].format(
-            month=selected_month,
-            hours=round(total_hours, 1),
-            net=round(total_net, 2)
-        )
-
         if callback:
             await callback.message.answer_document(document, caption=caption_text, parse_mode="Markdown")
         elif bot:
             await bot.send_document(user_id, document, caption=caption_text, parse_mode="Markdown")
             
     except Exception as e:
-        print(f"Ошибка сохранения или отправки отчета: {e}")
-    finally:
-        # Удаляем файл только если он реально был создан
-        if os.path.exists(file_name):
-            os.remove(file_name)
+        print(f"Ошибка отправки отчета: {e}")
+        if callback:
+            await callback.message.answer("⚠️ Ошибка обработки данных.")
+            
+    # Больше никакого блока finally и os.remove! 
+    # Сборщик мусора Python сам очистит память.
