@@ -136,7 +136,10 @@ async def generate_excel_report(callback: types.CallbackQuery = None, target_use
         max_length = max((len(str(cell.value)) for cell in col if cell.value is not None), default=0)
         ws.column_dimensions[col[0].column_letter].width = (max_length * 1.25) + 3
 
-    file_name = f"Zarobki_{selected_month}.xlsx"
+    # === ГЛАВНЫЙ ФИКС ДЛЯ GOOGLE CLOUD RUN ===
+    # Сохраняем файл во временную директорию /tmp/
+    file_name = f"/tmp/Zarobki_{selected_month}.xlsx"
+    
     wb.save(file_name)
     document = FSInputFile(file_name)
 
