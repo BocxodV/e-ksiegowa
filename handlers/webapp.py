@@ -387,8 +387,13 @@ async def web_app_handler(message: types.Message):
             except Exception:
                 pass
                 
-            await message.answer(final_text, reply_markup=markup, parse_mode="HTML")
-
+            await message.answer(
+                text=final_text, 
+                reply_markup=markup, 
+                parse_mode="HTML",
+                link_preview_options=LinkPreviewOptions(is_disabled=True) # <--- Отключаем огромный баннер
+                )
+            
         elif data.get("action") == "update_settings":
             for field in ["base_rate", "extra_rate", "rate_eur", "rate_drive", "rate_drive_eur", "goal_target"]:
                 val = data.get(field)
