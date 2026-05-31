@@ -63,10 +63,19 @@ export async function triggerCarScan() {
                 
                 if (response.ok) {
                     const result = await response.json();
-                    if (result && result.car) {
-                        if (garageCarInput) garageCarInput.value = result.car;
-                        if (mainCarInput) mainCarInput.value = result.car;
-                        tg.showAlert("✅ Кася успешно распознала автомобиль!");
+                    
+                    // Проверяем, есть ли хоть что-то (машина ИЛИ номер)
+                    if (result && (result.car || result.plate)) {
+                        // Склеиваем всё в одну строку
+                        const carName = result.car || "";
+                        const plateNumber = result.plate || "";
+                        const fullCarString = `${carName} ${plateNumber}`.trim();
+                        
+                        // Вставляем полную строку в оба поля
+                        if (garageCarInput) garageCarInput.value = fullCarString;
+                        if (mainCarInput) mainCarInput.value = fullCarString;
+                        
+                        tg.showAlert(`✅ Распознано: ${fullCarString}`);
                     }
                 } else {
                     tg.showAlert("❌ Ошибка сервера (пока не подключен ИИ).");
