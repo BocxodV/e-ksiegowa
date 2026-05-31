@@ -2,6 +2,7 @@ import json
 import logging
 import urllib.parse
 import asyncio 
+import os
 from datetime import datetime, timedelta
 from aiogram import Router, types, F
 from aiogram.filters import Command
@@ -11,6 +12,9 @@ from aiogram.types import (
 )
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+
+# ИИ-магия для мотивации
+import google.generativeai as genai
 
 from texts import TRANSLATIONS
 from keyboards import get_support_keyboard 
@@ -33,6 +37,52 @@ router = Router()
 logger = logging.getLogger(__name__)
 
 WEB_APP_URL = "https://e-ksiegowa.vercel.app/"
+
+# === НАСТРОЙКА ИИ GEMINI 3.5 FLASH ===
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+
+async def get_dynamic_motivation(user_lang="RUS"):
+    """Асинхронно генерирует уникальную цитату с защитой от таймаута для Cloud Run"""
+    fallback_quotes = {
+        "RUS": "✨ Отличная работа! Время заслуженного отдыха.",
+        "PL": "✨ Świetna robota! Czas na zasłużony odpoczynek.",
+        "UKR": "✨ Відмінна робота! Час для заслуженого відпочинку.",
+        "EN": "✨ Great job! Time for a well-deserved rest."
+    }
+    fallback = fallback_quotes.get(user_lang, fallback_quotes["RUS"])
+
+    if not GEMINI_API_KEY:
+        return fallback
+
+    try:
+        model = genai.GenerativeModel('gemini-3.5-flash')
+        
+        prompt = (
+            "Ты ИИ-ассистент. Сгенерируй одну короткую, универсальную и вдохновляющую "
+            "фразу (максимум 1-2 предложения) для человека, завершившего рабочий день. "
+            "Фраза должна подходить любому человеку. Без кавычек, без приветствий. "
+            "Тон: теплый и поддерживающий. "
+        )
+        
+        if user_lang == "PL": prompt += "Напиши на польском языке."
+        elif user_lang == "UKR": prompt += "Напиши на украинском языке."
+        else: prompt += "Напиши на русском языке."
+
+        # МАГИЯ CLOUD RUN: Ждем ответ максимум 3 секунды!
+        response = await asyncio.wait_for(
+            model.generate_content_async(prompt),
+            timeout=3.0
+        )
+        return f"✨ {response.text.strip()}"
+        
+    except asyncio.TimeoutError:
+        logger.warning("Gemini API timeout! Используем резервную цитату.")
+        return fallback
+    except Exception as e:
+        logger.error(f"Ошибка Gemini: {e}")
+        return fallback
 
 class SavingsState(StatesGroup):
     waiting_for_amount = State()
@@ -202,6 +252,7 @@ async def web_app_handler(message: types.Message):
             total_net, total_gross, total_loss, total_cash_diff = 0, 0, 0, 0
             ai_advice = ""
             
+            # === СТРОГО ТВОЯ МАТЕМАТИКА (ВОЗВРАЩЕНО ИЗ webapp_2.py) ===
             applied_nbp_rate = await get_eur_rate(data.get("date")) if is_abroad_actual else None
             is_trip_int = 1 if data.get("is_trip") else 0
             eff_rate = profile.get("extra_rate", 0)
@@ -237,6 +288,7 @@ async def web_app_handler(message: types.Message):
                 else:
                     is_trip_for_db = is_trip_int
                     weekday_num = d.weekday()
+                    
                     if weekday_num == 5: hours_50, hours_100, normal_hours = work_hours, 0, 0 
                     elif weekday_num == 6: hours_50, hours_100, normal_hours = 0, work_hours, 0 
                     else: 
@@ -283,28 +335,40 @@ async def web_app_handler(message: types.Message):
             dyn_url = await build_app_url(user_id) 
             total_shifts = await increment_shift_count(user_id)
             
-            coffee_msg = ""
-            if total_shifts > 0 and total_shifts % 10 == 0:
-                coffee_msg = f"\n\n☕️ <i>P.S. Я сохранила для тебя уже {total_shifts} смен! <a href='https://www.buymeacoffee.com/bocxodv'>Угостить кофе</a></i>"
+            # Ссылка на кофе теперь отображается в каждом чеке, показывая прогресс смен
+            coffee_msg = f"\n\n☕️ <i>Всего смен: {total_shifts} | <a href='https://www.buymeacoffee.com/bocxodv'>Угостить Касю кофе</a></i>"
             
             day_idx = start_date.weekday() 
             day_name = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"][day_idx]
             if user_lang == "PL": day_name = ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"][day_idx]
             elif user_lang == "UKR": day_name = ["Понеділок", "Вівторок", "Середа", "Четвер", "П'ятниця", "Субота", "Неділя"][day_idx]
 
+            # Получаем уникальную цитату от Gemini 3.5 Flash
+            motivation_text = await get_dynamic_motivation(user_lang)
+
+            # Эстетичный финальный чек
+            tax_coeff_val = profile.get("tax_coeff", 0.71)
+            card_money = total_gross * tax_coeff_val
+            
             final_text = (
-                f"✅ <b>Запись сохранена:</b> {start_date.strftime('%d.%m.%Y')} ({day_name})\n"
-                f"Статус: {status_icon}\n"
-                f"📍 Объект: {location} {country_flag}\n\n"
-                f"💰 <b>НА РУКИ: {total_net:.2f} zł</b>\n"
-                f"➖ ➖ ➖ ➖ ➖\n"
-                f"🕒 Работа: {work_hours} ч. | 🚗 За рулем: {driving_hours} ч.\n"
-                f"➖ ➖ ➖ ➖ ➖\n"
-                f"📊 <b>Детализация:</b>\n"
-                f"• Брутто: {total_gross:.2f} zł\n"
-                f"• Конверт (наличка): {total_cash_diff:.2f} zł\n"
+                "🧾 <b>СМЕНА ЗАКРЫТА</b> 🧾\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                f"📅 <b>Дата:</b> {start_date.strftime('%d.%m.%Y')} ({day_name})\n"
+                f"🛠 <b>Статус:</b> {status_icon}\n"
+                f"📍 <b>Объект:</b> {location} {country_flag}\n"
+                "┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n"
+                f"⏱ На объекте: <code>{work_hours:.1f} ч.</code>\n"
+                f"🚗 За рулем:   <code>{driving_hours:.1f} ч.</code>\n"
+                "┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n"
+                "💰 <b>ИТОГИ ДНЯ:</b>\n"
+                f"💵 На руки:   <code>{total_net:.2f} zł</code>\n"
+                f"📄 Брутто:    <code>{total_gross:.2f} zł</code>\n"
+                f"💳 На карту:  <code>{card_money:.2f} zł</code>\n"
+                f"✉️ В конверте: <code>{total_cash_diff:.2f} zł</code>\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                f"<i>{motivation_text}</i>\n"
                 f"{ai_advice}"
-                f"{coffee_msg}" 
+                f"{coffee_msg}"
             )
             
             await message.bot.set_chat_menu_button(
