@@ -2,7 +2,7 @@ aiogram>=3.27.0
 google-genai>=1.73.1
 asyncpg
 APScheduler>=3.11.2
-tzlocal<3.0
+tzlocal==5.2
 pytz>=2024.1
 aiohttp
 python-dotenv
