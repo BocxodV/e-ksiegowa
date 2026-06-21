@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from typing import Optional, Literal
 from pydantic import BaseModel, Field
 from google import genai
@@ -38,7 +39,6 @@ async def parse_shift_text(raw_text: str) -> dict:
     Parses unstructured text about a work shift and returns a structured dictionary
     matching the ShiftInfo schema using Gemini 3.5 Flash.
     """
-    from datetime import datetime
     current_date = datetime.now().strftime("%Y-%m-%d")
     
     client = genai.Client()
@@ -55,7 +55,7 @@ work_hours: Количество рабочих часов (число).
 
 driving_hours: Количество часов за рулем (число). Если не указано — 0.
 
-location: Название объекта, компании или города (строка). КРИТИЧЕСКИ ВАЖНО: НИКОГДА не переводи и не транслитерируй названия компаний или городов. Оставляй их в оригинальном виде (например, 'SWISS KRONO', а не 'свис кроно').
+location: Название объекта, компании или города (строка). КРИТИЧЕСКИ ВАЖНО: НИКОГДА не переводи и не транслитерируй названия компаний или городов. Оставляй их в оригинальном виде (например, 'SWISS KRONO', а не 'свис кроно' или 'Шары' вместо 'Żary').
 
 status: Строго одно из значений: 'Work', 'L4', 'Urlop'. Если не указано, по умолчанию 'Work'.
 
