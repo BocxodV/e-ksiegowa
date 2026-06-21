@@ -54,16 +54,24 @@ async def save_shift_to_db(state: AgentState) -> dict:
     lang = profile.get("lang") or "PL"
     day_of_week = days_map.get(lang, days_map['PL'])[date_obj.weekday()]
 
-    # If L4 or Urlop, force hours and financial parameters to 0
+    # If L4 or Urlop, force logged work/driving hours to 0 but calculate standard pay
     if status in ("L4", "Urlop"):
         work_hours = 0.0
         driving_hours = 0.0
         hours_50 = 0.0
         hours_100 = 0.0
-        bonuses = 0.0
-        gross = 0.0
-        net = 0.0
         is_trip_int = 0
+        
+        base_rate = float(profile.get("base_rate") or 32.0)
+        tax_coeff = float(profile.get("tax_coeff") or 0.71)
+        
+        if status == "L4":
+            gross = 8.0 * base_rate * 0.8
+        else:  # Urlop
+            gross = 8.0 * base_rate
+            
+        net = gross * tax_coeff
+        bonuses = 0.0
     else:
         work_hours = float(parsed_data.get("work_hours") or 0.0)
         driving_hours = float(parsed_data.get("driving_hours") or 0.0)

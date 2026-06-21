@@ -52,8 +52,8 @@ async def handle_voice_shift(message: types.Message):
             is_confirmed=False
         )
         
-        # 4. Setup thread config for MemorySaver persistence
-        config = {"configurable": {"thread_id": str(message.from_user.id)}}
+        # 4. Setup thread config for MemorySaver persistence (unique thread per message)
+        config = {"configurable": {"thread_id": f"{message.from_user.id}_{message.message_id}"}}
         
         # 5. Run the graph until the human_review interrupt point
         await status_msg.edit_text("🤖 Анализирую смену с помощью ИИ...")
@@ -76,8 +76,11 @@ async def handle_voice_shift(message: types.Message):
             await message.answer(f"⚠️ **Ошибка валидации данных:**\n\n{error_list}", parse_mode="Markdown")
             return
             
-        # 8. Send shift draft for user confirmation
+        # 8. Save shift draft to PostgreSQL and send for user confirmation
         parsed_data = current_state.get("parsed_data") or {}
+        from database import save_user_draft
+        await save_user_draft(message.from_user.id, message.message_id, parsed_data, transcribed_text)
+        
         draft_msg = (
             f"📝 **Черновик смены:**\n\n"
             f"📅 Дата: `{parsed_data.get('date') or 'Не указана'}`\n"
@@ -90,8 +93,8 @@ async def handle_voice_shift(message: types.Message):
         
         kb = types.InlineKeyboardMarkup(inline_keyboard=[
             [
-                types.InlineKeyboardButton(text="Да ✅", callback_data="confirm_shift_yes"),
-                types.InlineKeyboardButton(text="Нет ❌", callback_data="confirm_shift_no")
+                types.InlineKeyboardButton(text="Да ✅", callback_data=f"confirm_shift_yes:{message.message_id}"),
+                types.InlineKeyboardButton(text="Нет ❌", callback_data=f"confirm_shift_no:{message.message_id}")
             ]
         ])
         
@@ -102,30 +105,62 @@ async def handle_voice_shift(message: types.Message):
         logger.error(f"Voice Error: {e}", exc_info=True)
         await status_msg.edit_text(f"⚠️ Ошибка расшифровки: {str(e)}")
 
-@router.callback_query(F.data == "confirm_shift_yes")
+@router.callback_query(F.data.startswith("confirm_shift_yes"))
 async def handle_confirm_yes(callback: types.CallbackQuery):
     await callback.answer()
     status_msg = await callback.message.edit_text("💾 Сохраняю смену в базу данных...")
     
     try:
         user_id = callback.from_user.id
-        config = {"configurable": {"thread_id": str(user_id)}}
+        parts = callback.data.split(":")
+        msg_id = parts[1] if len(parts) > 1 else ""
         
-        # 1. Update state flag to True
-        await app_graph.aupdate_state(config, {"is_confirmed": True})
+        if msg_id:
+            config = {"configurable": {"thread_id": f"{user_id}_{msg_id}"}}
+        else:
+            # Fallback for backward compatibility
+            config = {"configurable": {"thread_id": str(user_id)}}
         
-        # Get raw_text and state for logging
-        state_snapshot = await app_graph.aget_state(config)
-        raw_text = state_snapshot.values.get("raw_input", "")
-        
-        logger.info(f"🚀 Запуск графа для пользователя {user_id}. Входной текст: '{raw_text}'")
-        # 2. Resume graph to run human_review and database saver node
-        async for event in app_graph.astream(None, config=config):
-            logger.debug(f"⚙️ Шаг графа: {event}")
+        # 1. Attempt to update state in-memory
+        try:
+            await app_graph.aupdate_state(config, {"is_confirmed": True})
+            state_snapshot = await app_graph.aget_state(config)
+            raw_text = state_snapshot.values.get("raw_input", "")
+        except Exception:
+            state_snapshot = None
+            raw_text = ""
             
-        # 3. Retrieve final state values
-        state_snapshot = await app_graph.aget_state(config)
-        current_state = state_snapshot.values
+        # 2. Check if checkpointer state was lost (scale-down/restart recovery)
+        if not state_snapshot or not state_snapshot.values.get("parsed_data"):
+            logger.warning(f"State checkpointer lost for thread {user_id}_{msg_id}. Activating DB fallback...")
+            from database import get_user_draft
+            parsed_data, raw_text = await get_user_draft(user_id, msg_id)
+            if not parsed_data:
+                logger.error("No draft found in DB fallback.")
+                await status_msg.edit_text("⚠️ Ошибка: черновик смены устарел или не найден. Пожалуйста, отправьте голосовое сообщение заново.")
+                return
+            
+            # Reconstruct state dictionary and save directly
+            fallback_state = {
+                "user_id": user_id,
+                "raw_input": raw_text,
+                "parsed_data": parsed_data,
+                "validation_errors": [],
+                "is_confirmed": True
+            }
+            from app.tools.db_tool import save_shift_to_db
+            await save_shift_to_db(fallback_state)
+            current_state = fallback_state
+        else:
+            # Checkpointer is alive, proceed normal graph execution
+            logger.info(f"🚀 Запуск графа для пользователя {user_id}. Входной текст: '{raw_text}'")
+            # Resume graph to run human_review and database saver node
+            async for event in app_graph.astream(None, config=config):
+                logger.debug(f"⚙️ Шаг графа: {event}")
+                
+            # Retrieve final state values
+            state_snapshot = await app_graph.aget_state(config)
+            current_state = state_snapshot.values
         logger.info(f"⏸️ Граф приостановлен/завершен. Текущее состояние: {current_state}")
         parsed_data = current_state.get("parsed_data") or {}
         
@@ -248,7 +283,7 @@ async def handle_confirm_yes(callback: types.CallbackQuery):
         except Exception:
             pass
 
-@router.callback_query(F.data == "confirm_shift_no")
+@router.callback_query(F.data.startswith("confirm_shift_no"))
 async def handle_confirm_no(callback: types.CallbackQuery):
     await callback.answer()
     await callback.message.edit_text("❌ **Ввод смены отменен.**", parse_mode="Markdown")

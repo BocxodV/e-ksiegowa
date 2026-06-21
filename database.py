@@ -286,3 +286,42 @@ async def get_system_stats():
             "users_count": users_count or 0,
             "shifts_count": shifts_count or 0
         }
+
+async def save_user_draft(user_id: int, msg_id: int, parsed_data: dict, raw_input: str):
+    """Saves a temporary shift draft to Neon Postgres for stateless resilience."""
+    import json
+    p = await get_pool()
+    draft_json = json.dumps(parsed_data)
+    async with p.acquire() as db:
+        await db.execute('''
+            CREATE TABLE IF NOT EXISTS user_drafts (
+                user_id BIGINT,
+                msg_id TEXT,
+                draft_data TEXT,
+                raw_input TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (user_id, msg_id)
+            )
+        ''')
+        await db.execute('''
+            INSERT INTO user_drafts (user_id, msg_id, draft_data, raw_input, updated_at)
+            VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+            ON CONFLICT (user_id, msg_id) DO UPDATE 
+            SET draft_data = EXCLUDED.draft_data, raw_input = EXCLUDED.raw_input, updated_at = CURRENT_TIMESTAMP
+        ''', user_id, str(msg_id), draft_json, raw_input)
+
+async def get_user_draft(user_id: int, msg_id: str):
+    """Retrieves a saved shift draft from Neon Postgres."""
+    import json
+    p = await get_pool()
+    async with p.acquire() as db:
+        try:
+            row = await db.fetchrow(
+                'SELECT draft_data, raw_input FROM user_drafts WHERE user_id = $1 AND msg_id = $2',
+                user_id, str(msg_id)
+            )
+            if row:
+                return json.loads(row['draft_data']), row['raw_input']
+        except Exception:
+            pass
+    return None, None
