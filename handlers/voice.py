@@ -57,12 +57,16 @@ async def handle_voice_shift(message: types.Message):
         
         # 5. Run the graph until the human_review interrupt point
         await status_msg.edit_text("🤖 Анализирую смену с помощью ИИ...")
+        user_id = message.from_user.id
+        raw_text = transcribed_text
+        logger.info(f"🚀 Запуск графа для пользователя {user_id}. Входной текст: '{raw_text}'")
         async for event in app_graph.astream(initial_state, config=config):
-            pass
+            logger.debug(f"⚙️ Шаг графа: {event}")
             
         # 6. Retrieve state after interrupt
         state_snapshot = await app_graph.aget_state(config)
         current_state = state_snapshot.values
+        logger.info(f"⏸️ Граф приостановлен/завершен. Текущее состояние: {current_state}")
         
         # 7. Check for validation errors
         errors = current_state.get("validation_errors", [])
@@ -110,13 +114,19 @@ async def handle_confirm_yes(callback: types.CallbackQuery):
         # 1. Update state flag to True
         await app_graph.aupdate_state(config, {"is_confirmed": True})
         
+        # Get raw_text and state for logging
+        state_snapshot = await app_graph.aget_state(config)
+        raw_text = state_snapshot.values.get("raw_input", "")
+        
+        logger.info(f"🚀 Запуск графа для пользователя {user_id}. Входной текст: '{raw_text}'")
         # 2. Resume graph to run human_review and database saver node
         async for event in app_graph.astream(None, config=config):
-            pass
+            logger.debug(f"⚙️ Шаг графа: {event}")
             
         # 3. Retrieve final state values
         state_snapshot = await app_graph.aget_state(config)
         current_state = state_snapshot.values
+        logger.info(f"⏸️ Граф приостановлен/завершен. Текущее состояние: {current_state}")
         parsed_data = current_state.get("parsed_data") or {}
         
         date_str = parsed_data.get("date")
