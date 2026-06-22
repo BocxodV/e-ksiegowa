@@ -200,6 +200,78 @@ TRANSLATIONS = {
         "voice_received": "🎙 **Raport głosowy przyjęty!**\n\n📅 Data: {date} ({day})\n📍 Lokalizacja: {loc}\n🕒 Praca: {hours} h | 🚗 Za kierownicą: {drive} h\n💰 **Na rękę: {net:.2f} zł**\n{eur}\n✅ *Zmiana z uwzględnieniem podatków i bonusów została zapisana w bazie!*",
         "voice_error": "⚠️ Błąd rozszyfrowania: {err}",
         "voice_eur_text": "🌍 Kurs NBP: {rate} zł\n",
+    },
+    "ENG": {
+        "saving": "⏳ Saving...",
+        "report_wait": "⏳ Generating report for {month}...",
+        "total_month": "Total for the month:",
+        "freemium": "🤝 **Partner, just a moment of your attention!**\n\nThis is your **{count}-th** generated report. I save you a lot of time on reconciliations with the office and tax calculations.\n\nTo keep the bot stable and developing, you can support the project with a symbolic donation \"for coffee ☕\".",
+        "audit_ok": "📊 **Audit for {month}**\n\n💳 Received on card: **{card} zł**\n💰 Your total earnings: **{total} zł**\n〰️〰️〰️〰️〰️〰️〰️\n⚖️ **Unresolved balance (Nierozliczone saldo): {env} zł**",
+        "audit_err": "⚠️ No work day records for {month}.",
+        "hist_err": "📭 No shifts saved for {month}.",
+        "hist_ok": "📜 **Shift history for {month}**\nClick ❌ to delete an incorrect entry:\n\n",
+        "set_ok": "⚙️ <b>Settings saved successfully!</b>",
+        "err": "⚠️ Data processing error.",
+        "del_ok_alert": "✅ Shift for {date} deleted!",
+        "del_ok_msg": "🗑 The entry for **{date}** was successfully deleted from the database.",
+        "del_err": "⚠️ Entry not found or already deleted.",
+        "pro_alert": "⭐ PRO subscription successfully activated!",
+        "pro_msg": "🎉 **Welcome to the PRO Club!**\n\nYour status has been successfully updated. Now all your Excel reports are generated in a professional design.\nThank you for investing in your time and supporting the project!",
+        "excel_headers": ["Date", "Day", "Status", "Object", "Car", "Route", "Total Hours", "Driving", "50%", "100%", "Travel Allowance", "Bonuses", "Gross", "Net"],
+        "excel_caption": "📊 Your salary for {month}\n🕒 Hours worked: **{hours} hrs**\n💰 Total earned: **{net} zł**",
+        "empty_db": "🤷‍♂️ No reports saved in the database yet.",
+        "btn_panel": "📱 Open Panel",
+        "btn_help": "🚀 How it works?",
+        "btn_feedback": "💬 Feedback & Ideas",
+        "btn_coffee_10": "☕️ Buy partner a coffee (10 zł)",
+        "btn_lunch_30": "🍕 Buy colleague a lunch (30 zł)",
+        "btn_pro": "⭐ Activate PRO Subscription",
+        "opt_work": "💼 Work",
+        "opt_l4": "💊 Sick Leave (L4)",
+        "opt_urlop": "🌴 Vacation",
+        "help_text": (
+            "🤖 **How do I work? It's simple!**\n\n"
+            "📱 **INTERACTIVE PANEL**\n"
+            "Click the \"Open Panel\" button — this is your main tool. It has three tabs:\n"
+            "1️⃣ **Shift** — to record hours worked, sick leaves, and vacations.\n"
+            "2️⃣ **Reports** — to export Excel, audit salary, and delete incorrect shifts.\n"
+            "3️⃣ **Settings** — to specify your rates and financial goal.\n\n"
+            "🌍 **SMART LOGISTICS AND CURRENCY**\n"
+            "If you enter a route but don't specify driving hours, I will calculate them myself! And if you check \"Abroad\", I will convert your earnings from Euro to Polish Zloty (PLN) at the current NBP (National Bank of Poland) exchange rate."
+        ),
+        "feedback_msg": "💡 Have an idea to improve the app? Or found a bug?\n\nWrite directly to the developer:\n👉 [Write to Developer](https://t.me/+1tajf8L_zck5NTQy)",
+        "overwork_msg": "{hours} hrs in one shift is impressive! But don't forget about rest and personal life. Health is more important than overtime!",
+        "l4_loss_msg": "**AI Analytics:** Health is more important than money! But for reference: this Sick Leave (L4) ({count} days) cost you a loss of about **{loss} zł** net.",
+        "menu_btn": "📱 Panel",
+        "menu_msg": "⚡️ Interactive panel is now always accessible via the menu button to the left of the input field!",
+        "welcome_text": (
+            "👋 Hello! I am Kasia — your smart AI assistant for work tracking and payroll in Poland! 👩‍💼\n\n"
+            "With my help, you can easily:\n"
+            "1️⃣ Keep accurate track of work shifts, hours on site, and driving time ⏱\n"
+            "2️⃣ Verify calculations for your official salary (Net/Gross), Sick Leave (L4), and Vacation 🌴\n"
+            "3️⃣ Manage Travel Allowance (diet) with automatic currency conversion at the NBP rate 💶\n"
+            "4️⃣ Save money in a virtual \"piggy bank\" and track progress toward your financial goal 🎯\n\n"
+            "⚠️ **Legal Disclaimer:**\n"
+            "The bot provides only mathematical calculations and analytical tools (Compensation Audit / Audyt wyrównania, Unresolved balance / Nierozliczone saldo) for self-control. The user bears full personal responsibility for declaring income and paying taxes in accordance with the legislation of the Republic of Poland.\n\n"
+            "To start your journey to financial order, press the **«📱 Panel»** button below! 👇"
+        ),
+        "excel_boss_headers": ["Date", "Day", "Status", "Object", "Car", "Route", "Total Hours", "Driving", "50%", "100%"],
+        "excel_boss_caption": "📊 Operational report for {month}\n🕒 Total hours worked: **{hours} hrs**",
+        "choose_month": "📅 Select a month to generate the report:",
+        "btn_edit_log": "✏️ Edit",
+        "feedback_help": "💡 Please write your feedback or suggestion after the command.\n\nExample: `/feedback Add the option to choose a theme color!`",
+        "feedback_sent": "✅ Thank you! Your feedback has been successfully sent to the developer.",
+        "feedback_error": "❌ An error occurred while sending feedback. Please try again later.",
+        "vision_analyzing": "👁 Examining photo...",
+        "vision_not_recognized": "🤷‍♂️ Could not recognize the car or plate number. Try a different angle!",
+        "vision_recognized": "🚗 **Car successfully recognized!**\n\n**Car:** {car}\n**Plate:** {plate}\n\n✅ Saved to Garage.",
+        "vision_error": "⚠️ Error analyzing photo: {err}",
+        "voice_analyzing": "🎧 Listening and analyzing...",
+        "voice_nbp_request": "🌍 Kasia is requesting the exchange rate from the NBP for {date_arg}...",
+        "voice_finalizing": "🧠 Finalizing report...",
+        "voice_received": "🎙 **Voice report received!**\n\n📅 Date: {date} ({day})\n📍 Location: {loc}\n🕒 Work: {hours} hrs | 🚗 Driving: {drive} hrs\n💰 **Net payout: {net:.2f} zł**\n{eur}\n✅ *Shift with taxes and bonuses has been saved to the database!*",
+        "voice_error": "⚠️ Transcription error: {err}",
+        "voice_eur_text": "🌍 NBP Exchange Rate: {rate} zł\n",
     }
 }
 
@@ -270,6 +342,28 @@ MOTIVATIONS = {
         "✨ За кожним зусиллям слідує нагорода. Твоя — це спокійний вечір.",
         "✨ Зміна здана. Попереду тільки приємні моменти!"
     ],
+    "ENG": [
+        "✨ Great job! Time for a well-deserved rest.",
+        "✨ Drop by drop makes an ocean. You are one step closer to your goal!",
+        "✨ Today's effort is tomorrow's freedom. Get some rest!",
+        "✨ Shift closed successfully. Be proud of yourself and your result!",
+        "✨ Another day, another confident step toward your dream.",
+        "✨ Perfect discipline. Now you can relax.",
+        "✨ Your efforts today build a peaceful tomorrow.",
+        "✨ Great result! Have a cozy evening.",
+        "✨ The goal is getting closer. Well done!",
+        "✨ Another chapter of your journey is complete. Breathe out.",
+        "✨ Time to take a breath, reset, and recharge.",
+        "✨ Worked wonderfully! Enjoy your free time.",
+        "✨ Your persistence is your main asset.",
+        "✨ Leave work at work. Now it's time for yourself.",
+        "✨ Small but regular steps lead to great achievements.",
+        "✨ Be proud of your work and rest your mind.",
+        "✨ Balance is key: you worked hard, now rest well.",
+        "✨ Today you did your best. Thank you for your work!",
+        "✨ Every effort is followed by a reward. Yours is a peaceful evening.",
+        "✨ Shift turned in. Only pleasant moments ahead!"
+    ]
 }
 
 def get_random_motivation(lang_code="RUS"):

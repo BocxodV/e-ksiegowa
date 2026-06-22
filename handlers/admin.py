@@ -78,7 +78,7 @@ async def cmd_broadcast(message: types.Message):
             line_strip = line.strip()
             if line_strip.startswith("[") and line_strip.endswith("]"):
                 tag = line_strip[1:-1].upper()
-                if tag in ["RUS", "PL", "UKR"]:
+                if tag in ["RUS", "PL", "UKR", "ENG"]:
                     current_lang = tag
                     parsed_data[current_lang] = []
                     continue

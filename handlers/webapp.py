@@ -76,7 +76,7 @@ async def calculate_forecast(user_id, profile=None):
 async def build_app_url(user_id, profile=None):
     if not profile:
         profile = await get_user_profile(user_id)
-    _ALLOWED_LANGS = {"RUS", "UKR", "PL"}
+    _ALLOWED_LANGS = {"RUS", "UKR", "PL", "ENG"}
     user_lang = profile.get("lang", "RUS")
     if user_lang not in _ALLOWED_LANGS:
         user_lang = "RUS"
@@ -226,7 +226,8 @@ async def web_app_handler(message: types.Message):
                 days_map = {
                     'RUS': ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"],
                     'UKR': ["Понеділок", "Вівторок", "Середа", "Четвер", "П'ятниця", "Субота", "Неділя"],
-                    'PL': ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"]
+                    'PL': ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"],
+                    'ENG': ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
                 }
                 day_w = days_map.get(user_lang, days_map['PL'])[d.weekday()]
 
@@ -282,9 +283,9 @@ async def web_app_handler(message: types.Message):
                 total_cash_diff += cash_part
             
             status_labels = {
-                "Work": {"PL": "💼 Praca", "UKR": "💼 Робота", "RUS": "💼 Работа"},
-                "L4": {"PL": "💊 Zwolnienie (L4)", "UKR": "💊 Лікарняний (L4)", "RUS": "💊 Больничный (L4)"},
-                "Urlop": {"PL": "🌴 Urlop", "UKR": "🌴 Відпустка", "RUS": "🌴 Отпуск"}
+                "Work": {"PL": "💼 Praca", "UKR": "💼 Робота", "RUS": "💼 Работа", "ENG": "💼 Work"},
+                "L4": {"PL": "💊 Zwolnienie (L4)", "UKR": "💊 Лікарняний (L4)", "RUS": "💊 Больничный (L4)", "ENG": "💊 Sick Leave (L4)"},
+                "Urlop": {"PL": "🌴 Urlop", "UKR": "🌴 Відпустка", "RUS": "🌴 Отпуск", "ENG": "🌴 Vacation"}
             }
             status_icon = status_labels.get(status, status_labels["Work"]).get(user_lang, status_labels["Work"]["RUS"])
             
@@ -294,12 +295,15 @@ async def web_app_handler(message: types.Message):
             dyn_url = await build_app_url(user_id) 
             total_shifts = await increment_shift_count(user_id)
             
-            coffee_msg = f"\n\n☕️ <i>Всего смен: {total_shifts} | <a href='https://www.buymeacoffee.com/bocxodv'>Угостить Касю кофе</a></i>"
+            total_shifts_label = {"ENG": "Total shifts", "PL": "Suma zmian", "UKR": "Всього змін", "RUS": "Всего смен"}.get(user_lang, "Всего смен")
+            coffee_label = {"ENG": "Buy Kasia a coffee", "PL": "Postaw Kasi kawę", "UKR": "Пригостити Касю кавою", "RUS": "Угостить Касю кофе"}.get(user_lang, "Угостить Касю кофе")
+            coffee_msg = f"\n\n☕️ <i>{total_shifts_label}: {total_shifts} | <a href='https://www.buymeacoffee.com/bocxodv'>{coffee_label}</a></i>"
             
             day_idx = start_date.weekday() 
             day_name = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"][day_idx]
             if user_lang == "PL": day_name = ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"][day_idx]
             elif user_lang == "UKR": day_name = ["Понеділок", "Вівторок", "Середа", "Четвер", "П'ятниця", "Субота", "Неділя"][day_idx]
+            elif user_lang == "ENG": day_name = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"][day_idx]
 
             # Retrieve localized motivational quote locally
             motivation_text = get_random_motivation(user_lang)
@@ -307,21 +311,35 @@ async def web_app_handler(message: types.Message):
             tax_coeff_val = profile.get("tax_coeff", 0.71)
             card_money = total_gross * tax_coeff_val
             
+            # Localized labels for shift submission confirmation message
+            shift_title = {"ENG": "SHIFT CLOSED", "PL": "ZMIANA ZAKOŃCZONA", "UKR": "ЗМІНА ЗАКРИТА", "RUS": "СМЕНА ЗАКРЫТА"}.get(user_lang, "СМЕНА ЗАКРЫТА")
+            lbl_date = {"ENG": "Date", "PL": "Data", "UKR": "Дата", "RUS": "Дата"}.get(user_lang, "Дата")
+            lbl_status = {"ENG": "Status", "PL": "Status", "UKR": "Статус", "RUS": "Статус"}.get(user_lang, "Статус")
+            lbl_object = {"ENG": "Object", "PL": "Obiekt", "UKR": "Об'єкт", "RUS": "Объект"}.get(user_lang, "Объект")
+            lbl_on_site = {"ENG": "On site", "PL": "Na obiekcie", "UKR": "На об'єкті", "RUS": "На объекте"}.get(user_lang, "На объекте")
+            lbl_driving = {"ENG": "Driving", "PL": "Za kierownicą", "UKR": "Za kierownicą", "RUS": "За рулем"}.get(user_lang, "За рулем")
+            lbl_h = {"ENG": "h", "PL": "h", "UKR": "год", "RUS": "ч."}.get(user_lang, "ч.")
+            lbl_day_summary = {"ENG": "DAILY SUMMARY", "PL": "PODSUMOWANIE DNIA", "UKR": "ПІДСУМКИ ДНЯ", "RUS": "ИТОГИ ДНЯ"}.get(user_lang, "ИТОГИ ДНЯ")
+            lbl_net_payout = {"ENG": "Net payout", "PL": "Na rękę", "UKR": "На руки", "RUS": "На руки"}.get(user_lang, "На руки")
+            lbl_gross = {"ENG": "Gross", "PL": "Brutto", "UKR": "Брутто", "RUS": "Брутто"}.get(user_lang, "Брутто")
+            lbl_to_card = {"ENG": "To card", "PL": "Na kartę", "UKR": "На карту", "RUS": "На карту"}.get(user_lang, "На карту")
+            lbl_env = {"ENG": "Unresolved balance (Nierozliczone saldo)", "PL": "Nierozliczone saldo", "UKR": "Nierozliczone saldo", "RUS": "Nierozliczone saldo"}.get(user_lang, "Nierozliczone saldo")
+            
             final_text = (
-                "🧾 <b>СМЕНА ЗАКРЫТА</b> 🧾\n"
+                f"🧾 <b>{shift_title}</b> 🧾\n"
                 "━━━━━━━━━━━━━━━━━━━━\n"
-                f"📅 <b>Дата:</b> {start_date.strftime('%d.%m.%Y')} ({day_name})\n"
-                f"🛠 <b>Статус:</b> {status_icon}\n"
-                f"📍 <b>Объект:</b> {location} {country_flag}\n"
+                f"📅 <b>{lbl_date}:</b> {start_date.strftime('%d.%m.%Y')} ({day_name})\n"
+                f"🛠 <b>{lbl_status}:</b> {status_icon}\n"
+                f"📍 <b>{lbl_object}:</b> {location} {country_flag}\n"
                 "┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n"
-                f"⏱ На объекте: <code>{work_hours:.1f} ч.</code>\n"
-                f"🚗 За рулем:   <code>{driving_hours:.1f} ч.</code>\n"
+                f"⏱ {lbl_on_site}: <code>{work_hours:.1f} {lbl_h}</code>\n"
+                f"🚗 {lbl_driving}:   <code>{driving_hours:.1f} {lbl_h}</code>\n"
                 "┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n"
-                "💰 <b>ИТОГИ ДНЯ:</b>\n"
-                f"💵 На руки:   <code>{total_net:.2f} zł</code>\n"
-                f"📄 Брутто:    <code>{total_gross:.2f} zł</code>\n"
-                f"💳 На карту:  <code>{card_money:.2f} zł</code>\n"
-                f"⚖️ Nierozliczone saldo: <code>{total_cash_diff:.2f} zł</code>\n"
+                f"💰 <b>{lbl_day_summary}:</b>\n"
+                f"💵 {lbl_net_payout}:   <code>{total_net:.2f} zł</code>\n"
+                f"📄 {lbl_gross}:    <code>{total_gross:.2f} zł</code>\n"
+                f"💳 {lbl_to_card}:  <code>{card_money:.2f} zł</code>\n"
+                f"⚖️ {lbl_env}: <code>{total_cash_diff:.2f} zł</code>\n"
                 "━━━━━━━━━━━━━━━━━━━━\n"
                 f"<i>{motivation_text}</i>\n"
                 f"{ai_advice}"
@@ -405,13 +423,34 @@ async def web_app_handler(message: types.Message):
                 envelope = total_net - card_amount
                 ten_percent = round(total_net * 0.10, 2)
                 
+                # Dynamic translation for audit inline buttons
+                btn_save_10 = {
+                    "ENG": f"💰 Save 10% ({ten_percent} zł)",
+                    "PL": f"💰 Odłóż 10% ({ten_percent} zł)",
+                    "UKR": f"💰 Відкласти 10% ({ten_percent} zł)",
+                    "RUS": f"💰 Закинуть 10% ({ten_percent} zł)"
+                }.get(user_lang, f"💰 Закинуть 10% ({ten_percent} zł)")
+                
+                btn_custom = {
+                    "ENG": "✍️ Enter custom amount",
+                    "PL": "✍️ Wpisz własną kwotę",
+                    "UKR": "✍️ Ввести свою суму",
+                    "RUS": "✍️ Ввести свою сумму"
+                }.get(user_lang, "✍️ Ввести свою сумму")
+                
                 keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                    [InlineKeyboardButton(text=f"💰 Закинуть 10% ({ten_percent} zł)", callback_data=f"add_savings_{ten_percent}")],
-                    [InlineKeyboardButton(text="✍️ Ввести свою сумму", callback_data="custom_savings")]
+                    [InlineKeyboardButton(text=btn_save_10, callback_data=f"add_savings_{ten_percent}")],
+                    [InlineKeyboardButton(text=btn_custom, callback_data="custom_savings")]
                 ])
                 
-                msg_text = (t["audit_ok"].format(month=target_month, card=card_amount, total=f"{total_net:.2f}", env=f"{max(0, envelope):.2f}") +
-                            f"\n\n💡 *Совет от Каси:*\nОтличный месяц! Рекомендую отложить 10% от заработанного ({ten_percent} zł) в копилку на твою цель.")
+                advice_tip = {
+                    "ENG": f"\n\n💡 *Kasia's Advice:*\nGreat month! I recommend putting aside 10% of your earnings ({ten_percent} zł) into the piggy bank for your goal.",
+                    "PL": f"\n\n💡 *Rada od Kasi:*\nŚwietny miesiąc! Zalecam odłożyć 10% zarobków ({ten_percent} zł) do skarbonki na Twój cel.",
+                    "UKR": f"\n\n💡 *Порада від Касі:*\nЧудовий місяць! Рекомендую відкласти 10% від заробленого ({ten_percent} zł) у скарбничку на твою мету.",
+                    "RUS": f"\n\n💡 *Совет от Каси:*\nОтличный месяц! Рекомендую отложить 10% от заработанного ({ten_percent} zł) в копилку на твою цель."
+                }.get(user_lang, f"\n\n💡 *Совет от Каси:*\nОтличный месяц! Рекомендую отложить 10% от заработанного ({ten_percent} zł) в копилку на твою цель.")
+                
+                msg_text = t["audit_ok"].format(month=target_month, card=card_amount, total=f"{total_net:.2f}", env=f"{max(0, envelope):.2f}") + advice_tip
                 
                 await message.answer(msg_text, parse_mode="Markdown", reply_markup=keyboard)
             else:
@@ -428,6 +467,13 @@ async def web_app_handler(message: types.Message):
             labels = [row[0] for row in analytics_data]
             values = [row[3] for row in analytics_data]
             
+            chart_title = {
+                "ENG": f"Earnings by objects ({target_month})",
+                "PL": f"Przychody według obiektów ({target_month})",
+                "UKR": f"Прибутки по об'єктах ({target_month})",
+                "RUS": f"Доходы по объектам ({target_month})"
+            }.get(user_lang, f"Доходы по объектам ({target_month})")
+            
             chart_config = {
                 "type": "pie",
                 "data": {
@@ -438,7 +484,7 @@ async def web_app_handler(message: types.Message):
                     }]
                 },
                 "options": {
-                    "title": { "display": True, "text": f"Доходы по объектам ({target_month})", "fontSize": 20 },
+                    "title": { "display": True, "text": chart_title, "fontSize": 20 },
                     "plugins": { "datalabels": { "color": "white", "font": { "weight": "bold" } } }
                 }
             }
@@ -446,7 +492,14 @@ async def web_app_handler(message: types.Message):
             encoded_config = urllib.parse.quote(json.dumps(chart_config))
             chart_url = f"https://quickchart.io/chart?c={encoded_config}&width=500&height=300&bkg=white"
 
-            msg_text = f"📊 **Аналитика по объектам за {target_month}**\n\n"
+            analytics_title = {
+                "ENG": f"📊 **Analytics by objects for {target_month}**\n\n",
+                "PL": f"📊 **Analityka obiektów za {target_month}**\n\n",
+                "UKR": f"📊 **Аналітика по об'єктах за {target_month}**\n\n",
+                "RUS": f"📊 **Аналитика по объектам за {target_month}**\n\n"
+            }.get(user_lang, f"📊 **Аналитика по объектам за {target_month}**\n\n")
+            
+            msg_text = analytics_title
             medals = ["🥇", "🥈", "🥉"]
             for i, row in enumerate(analytics_data):
                 loc, t_work, t_drive, t_net = row[0], row[1], row[2], row[3]
@@ -473,7 +526,8 @@ async def web_app_handler(message: types.Message):
             title_map = {
                 "RUS": "📋 **Просмотр смен за {month}**\n\n",
                 "UKR": "📋 **Перегляд змін за {month}**\n\n",
-                "PL": "📋 **Podgląd zmian w {month}**\n\n"
+                "PL": "📋 **Podgląd zmian w {month}**\n\n",
+                "ENG": "📋 **View shifts for {month}**\n\n"
             }
             title = title_map.get(user_lang, title_map["RUS"]).format(month=target_month)
             lines = [title]
@@ -491,37 +545,39 @@ async def web_app_handler(message: types.Message):
                 
                 icon = "💼" if status == "Work" else "💊" if status == "L4" else "🌴"
                 status_desc = {
-                    "Work": {"RUS": "Работа", "UKR": "Робота", "PL": "Praca"},
-                    "L4": {"RUS": "Больничный (L4)", "UKR": "Лікарняний (L4)", "PL": "Zwolnienie (L4)"},
-                    "Urlop": {"RUS": "Отпуск", "UKR": "Відпустка", "PL": "Urlop"}
-                }.get(status, {"RUS": status, "UKR": status, "PL": status}).get(user_lang, status)
+                    "Work": {"RUS": "Работа", "UKR": "Робота", "PL": "Praca", "ENG": "Work"},
+                    "L4": {"RUS": "Больничный (L4)", "UKR": "Лікарняний (L4)", "PL": "Zwolnienie (L4)", "ENG": "Sick Leave (L4)"},
+                    "Urlop": {"RUS": "Отпуск", "UKR": "Відпустка", "PL": "Urlop", "ENG": "Vacation"}
+                }.get(status, {"RUS": status, "UKR": status, "PL": status, "ENG": status}).get(user_lang, status)
                 
                 day_short = day_of_week[:3] if day_of_week else ""
                 lines.append(f"📅 **{log_date} ({day_short})** — {icon} {status_desc}")
                 
                 if status == "Work":
                     if location:
-                        loc_lbl = "Объект" if user_lang == "RUS" else "Об'єкт" if user_lang == "UKR" else "Obiekt"
-                        car_lbl = "Авто" if user_lang in ["RUS", "UKR"] else "Auto"
+                        loc_lbl = "Object" if user_lang == "ENG" else "Объект" if user_lang == "RUS" else "Об'єкт" if user_lang == "UKR" else "Obiekt"
+                        car_lbl = "Car" if user_lang == "ENG" else "Авто" if user_lang in ["RUS", "UKR"] else "Auto"
                         lines.append(f"   📍 {loc_lbl}: {location}" + (f" | 🚛 {car_lbl}: {car}" if car else ""))
                     
                     if work_hours_f > 0 or driving_hours_f > 0:
-                        h_lbl = "ч." if user_lang == "RUS" else "год" if user_lang == "UKR" else "h"
-                        lines.append(f"   ⏱ На объекте: {work_hours_f:g} {h_lbl} | 🚗 За рулем: {driving_hours_f:g} {h_lbl}")
+                        h_lbl = "h" if user_lang in ["PL", "ENG"] else "ч." if user_lang == "RUS" else "год" if user_lang == "UKR" else "h"
+                        on_site_lbl = "On site" if user_lang == "ENG" else "Na obiekcie" if user_lang == "PL" else "На об'єкті" if user_lang == "UKR" else "На объекте"
+                        driving_lbl = "Driving" if user_lang == "ENG" else "Za kierownicą" if user_lang == "PL" else "За кермом" if user_lang == "UKR" else "За рулем"
+                        lines.append(f"   ⏱ {on_site_lbl}: {work_hours_f:g} {h_lbl} | 🚗 {driving_lbl}: {driving_hours_f:g} {h_lbl}")
                         
                     if route:
-                        r_lbl = "Маршрут" if user_lang in ["RUS", "UKR"] else "Trasa"
+                        r_lbl = "Route" if user_lang == "ENG" else "Маршрут" if user_lang in ["RUS", "UKR"] else "Trasa"
                         lines.append(f"   🛣 {r_lbl}: {route}")
                 
-                net_lbl = "Чистыми" if user_lang == "RUS" else "Чистими" if user_lang == "UKR" else "Netto"
+                net_lbl = "Net" if user_lang == "ENG" else "Чистыми" if user_lang == "RUS" else "Чистими" if user_lang == "UKR" else "Netto"
                 lines.append(f"   💰 {net_lbl}: **{net_f:.2f} zł**")
                 lines.append("   ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈")
             
-            tot_lbl = "ИТОГО" if user_lang == "RUS" else "ВСОГО" if user_lang == "UKR" else "RAZEM"
-            w_tot_lbl = "На объекте" if user_lang == "RUS" else "На об'єкті" if user_lang == "UKR" else "Na obiekcie"
-            d_tot_lbl = "За рулем" if user_lang == "RUS" else "За кермом" if user_lang == "UKR" else "Za kierownicą"
-            n_tot_lbl = "Заработано" if user_lang == "RUS" else "Зароблено" if user_lang == "UKR" else "Zarobiono"
-            h_lbl = "ч." if user_lang == "RUS" else "год" if user_lang == "UKR" else "h"
+            tot_lbl = "TOTAL" if user_lang == "ENG" else "ИТОГО" if user_lang == "RUS" else "ВСОГО" if user_lang == "UKR" else "RAZEM"
+            w_tot_lbl = "On site" if user_lang == "ENG" else "На объекте" if user_lang == "RUS" else "На об'єкті" if user_lang == "UKR" else "Na obiekcie"
+            d_tot_lbl = "Driving" if user_lang == "ENG" else "За рулем" if user_lang == "RUS" else "За кермом" if user_lang == "UKR" else "Za kierownicą"
+            n_tot_lbl = "Earned" if user_lang == "ENG" else "Заработано" if user_lang == "RUS" else "Зароблено" if user_lang == "UKR" else "Zarobiono"
+            h_lbl = "h" if user_lang in ["PL", "ENG"] else "ч." if user_lang == "RUS" else "год" if user_lang == "UKR" else "h"
             
             lines.append(f"\n📊 **{tot_lbl}:**")
             lines.append(f"⏱ {w_tot_lbl}: **{total_work_hours:g} {h_lbl}**")

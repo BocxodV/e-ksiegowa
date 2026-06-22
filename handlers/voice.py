@@ -215,9 +215,9 @@ async def handle_confirm_yes(callback: types.CallbackQuery):
                 
         # Status icon
         status_labels = {
-            "Work": {"PL": "💼 Praca", "UKR": "💼 Робота", "RUS": "💼 Работа"},
-            "L4": {"PL": "💊 Zwolnienie (L4)", "UKR": "💊 Лікарняний (L4)", "RUS": "💊 Больничный (L4)"},
-            "Urlop": {"PL": "🌴 Urlop", "UKR": "🌴 Відпустка", "RUS": "🌴 Отпуск"}
+            "Work": {"PL": "💼 Praca", "UKR": "💼 Робота", "RUS": "💼 Работа", "ENG": "💼 Work"},
+            "L4": {"PL": "💊 Zwolnienie (L4)", "UKR": "💊 Лікарняний (L4)", "RUS": "💊 Больничный (L4)", "ENG": "💊 Sick Leave (L4)"},
+            "Urlop": {"PL": "🌴 Urlop", "UKR": "🌴 Відпустка", "RUS": "🌴 Отпуск", "ENG": "🌴 Vacation"}
         }
         status_icon = status_labels.get(status, status_labels["Work"]).get(user_lang, status_labels["Work"]["RUS"])
         

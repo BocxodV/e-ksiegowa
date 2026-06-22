@@ -10,7 +10,7 @@ from texts import TRANSLATIONS
 
 router = Router()
 
-@router.message(F.text.in_(["📊 Mój raport", "📊 Мій звіт", "📊 Мой отчет"]))
+@router.message(F.text.in_(["📊 Mój raport", "📊 Мій звіт", "📊 Мой отчет", "📊 My Report"]))
 async def ask_report_month(message: types.Message):
     user_id = message.from_user.id
     profile = await get_user_profile(user_id)

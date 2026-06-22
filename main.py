@@ -78,7 +78,7 @@ async def handle_start(message: types.Message):
     if tg_lang:
         if tg_lang.startswith('pl'): user_lang = "PL"
         elif tg_lang.startswith('uk'): user_lang = "UKR"
-        elif tg_lang.startswith('en'): user_lang = "EN"
+        elif tg_lang.startswith('en'): user_lang = "ENG"
         else: user_lang = "RUS" 
     else:
         user_lang = profile.get("lang", "RUS")
@@ -105,7 +105,8 @@ async def handle_start(message: types.Message):
             [
                 InlineKeyboardButton(text="🇵🇱 PL", callback_data="lang_PL"),
                 InlineKeyboardButton(text="🇷🇺 RU", callback_data="lang_RUS"),
-                InlineKeyboardButton(text="🇺🇦 UK", callback_data="lang_UKR")
+                InlineKeyboardButton(text="🇺🇦 UK", callback_data="lang_UKR"),
+                InlineKeyboardButton(text="🇬🇧 EN", callback_data="lang_ENG")
             ]
         ]
     )
