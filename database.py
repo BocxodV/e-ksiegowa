@@ -68,7 +68,8 @@ async def init_db():
             "goal_target NUMERIC DEFAULT 8000.0",
             "shifts_added INTEGER DEFAULT 0",
             "current_savings NUMERIC DEFAULT 0.0",
-            "goal_deadline TEXT DEFAULT ''"
+            "goal_deadline TEXT DEFAULT ''",
+            "total_vacation_days INTEGER DEFAULT 26"
         ]
         for col in columns:
             try:
@@ -89,13 +90,13 @@ async def get_user_profile(user_id):
             SELECT 
                 language, base_rate, extra_rate, tax_coeff, rate_drive, 
                 rate_eur, rate_drive_eur, default_car, goal_name, 
-                goal_target, current_savings, goal_deadline 
+                goal_target, current_savings, goal_deadline, total_vacation_days 
             FROM users WHERE user_id = $1
         ''', user_id)
 
         if not user:
             # Fallback in case of DB issues
-            return {"lang": "RUS", "base_rate": 0.0, "extra_rate": 0.0, "tax_coeff": 0.0, "rate_drive": 0.0, "rate_eur": 0.0, "rate_drive_eur": 0.0, "default_car": "", "goal_name": "Финансовая цель", "goal_target": 8000.0, "current_savings": 0.0, "goal_deadline": ""}
+            return {"lang": "RUS", "base_rate": 0.0, "extra_rate": 0.0, "tax_coeff": 0.0, "rate_drive": 0.0, "rate_eur": 0.0, "rate_drive_eur": 0.0, "default_car": "", "goal_name": "Финансовая цель", "goal_target": 8000.0, "current_savings": 0.0, "goal_deadline": "", "total_vacation_days": 26}
         
         return {
             "lang": user[0],
@@ -109,7 +110,8 @@ async def get_user_profile(user_id):
             "goal_name": user[8] or "Финансовая цель",     
             "goal_target": float(user[9]) if user[9] else 8000.0,
             "current_savings": float(user[10]) if user[10] else 0.0,
-            "goal_deadline": user[11] or ""
+            "goal_deadline": user[11] or "",
+            "total_vacation_days": int(user[12]) if user[12] is not None else 26
         }
 
 async def update_user_setting(user_id, field, value):
@@ -117,7 +119,7 @@ async def update_user_setting(user_id, field, value):
         "language", "base_rate", "extra_rate", "tax_coeff", "rate_drive", 
         "rate_eur", "rate_drive_eur", "default_car", "goal_name", 
         "goal_target", "current_savings", "goal_deadline", "last_location", 
-        "last_country"
+        "last_country", "total_vacation_days"
     }
     if field not in ALLOWED_FIELDS:
         logger.error(f"Attempt to update invalid field: {field}")
@@ -237,17 +239,39 @@ async def add_user_savings(user_id: int, amount: float) -> float:
 async def get_analytics_by_location(user_id, month_year):
     p = await get_pool()
     async with p.acquire() as db:
-        return await db.fetch('''
-            SELECT 
-                location, 
-                SUM(work_hours) as total_work, 
-                SUM(driving_hours) as total_drive, 
-                SUM(net) as total_net
-            FROM work_logs
-            WHERE user_id = $1 AND month_year = $2 AND location != '' AND status = 'Work'
-            GROUP BY location
-            ORDER BY total_net DESC
-        ''', user_id, month_year)
+        try:
+            return await db.fetch('''
+                SELECT 
+                    location, 
+                    SUM(work_hours) as total_work, 
+                    SUM(driving_hours) as total_drive, 
+                    SUM(net) as total_net
+                FROM work_logs
+                WHERE user_id = $1 AND month_year = $2 AND location != '' AND status = 'Work'
+                GROUP BY location
+                ORDER BY total_net DESC
+            ''', user_id, month_year)
+        except Exception as e:
+            logger.error(f"Error getting analytics: {e}")
+            return []
+
+async def get_user_vacations(user_id, year=None):
+    from datetime import datetime
+    if year is None:
+        year = datetime.now().year
+    
+    p = await get_pool()
+    async with p.acquire() as db:
+        try:
+            rows = await db.fetch('''
+                SELECT log_date FROM work_logs 
+                WHERE user_id = $1 AND status = 'Urlop' AND log_date LIKE $2
+                ORDER BY id ASC
+            ''', user_id, f"%.{year}")
+            return [row[0] for row in rows]
+        except Exception as e:
+            logger.error(f"Error getting vacations: {e}")
+            return []
         
 async def get_user_unique_records(user_id: int):
     p = await get_pool()

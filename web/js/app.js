@@ -3,7 +3,7 @@ import { tg, initTelegram } from './core/telegram.js';
 import { state, TRANSLATIONS } from './core/state.js';
 import { openTab, setupSwipes, updatePolaroid } from './modules/tabs.js';
 import { triggerCarScan } from './modules/camera.js';
-import { sendShift, sendReportReq, sendBossReportReq, sendHistoryReq, sendHistoryEditReq, sendAnalyticsReq, sendSettings, sendAuditReq, openGoogleMaps, sendFeedback } from './modules/api.js';
+import { sendShift, sendReportReq, sendBossReportReq, sendLogisticsReportReq, sendHistoryReq, sendHistoryEditReq, sendAnalyticsReq, sendVacationStatsReq, sendSettings, sendAuditReq, openGoogleMaps, sendFeedback } from './modules/api.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     initTelegram();
@@ -70,9 +70,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     applyLanguage(urlParams.get("lang") || "RUS"); 
 
-    ["base", "extra", "eur", "drive", "drive_eur", "car", "g_target", "g_dead"].forEach(key => {
+    ["base", "extra", "eur", "drive", "drive_eur", "car", "g_target", "g_dead", "vacation"].forEach(key => {
         if (urlParams.has(key)) {
-            let inputMap = {"base":"baseRateInput", "extra":"extraRateInput", "eur":"eurRateInput", "drive":"driveRateInput", "drive_eur":"driveEurRateInput", "car":"carInput", "g_target":"goalTargetInput", "g_dead":"goalDeadlineInput"};
+            let inputMap = {"base":"baseRateInput", "extra":"extraRateInput", "eur":"eurRateInput", "drive":"driveRateInput", "drive_eur":"driveEurRateInput", "car":"carInput", "g_target":"goalTargetInput", "g_dead":"goalDeadlineInput", "vacation": "totalVacationDaysInput"};
             if(document.getElementById(inputMap[key])) document.getElementById(inputMap[key]).value = urlParams.get(key);
         }
     });
@@ -199,9 +199,11 @@ document.addEventListener('DOMContentLoaded', () => {
     window.sendShift = sendShift;
     window.sendReportReq = sendReportReq;
     window.sendBossReportReq = sendBossReportReq;
+    window.sendLogisticsReportReq = sendLogisticsReportReq;
     window.sendHistoryReq = sendHistoryReq;
     window.sendHistoryEditReq = sendHistoryEditReq;
     window.sendAnalyticsReq = sendAnalyticsReq;
+    window.sendVacationStatsReq = sendVacationStatsReq;
     window.sendSettings = sendSettings;
     window.sendAuditReq = sendAuditReq;
     window.openGoogleMaps = openGoogleMaps;

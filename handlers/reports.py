@@ -259,3 +259,81 @@ async def generate_boss_excel_report(target_user_id, target_month, bot: Bot):
         await bot.send_document(target_user_id, document, caption=caption_text, parse_mode="Markdown")
     except Exception as e:
         print(f"Failed to send boss report: {e}")
+
+async def generate_pure_logistics_report(target_user_id, target_month, bot: Bot):
+    profile = await get_user_profile(target_user_id)
+    user_lang = profile.get("lang", "RUS")
+    t = TRANSLATIONS.get(user_lang, TRANSLATIONS["RUS"])
+
+    rows = await get_work_logs_for_month(target_user_id, target_month)
+
+    if not rows:
+        await bot.send_message(target_user_id, t["empty_db"])
+        return
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = f"Transport {target_month}"
+
+    header_fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF")
+    center_aligned = Alignment(horizontal="center", vertical="center")
+
+    headers = t.get("excel_pure_logistics_headers", ["Data", "Dzień", "Trasa", "Auto", "Godziny jazdy"])
+    ws.append(headers)
+
+    for cell in ws[1]:
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center_aligned
+
+    total_drive_hours = 0.0
+
+    for row in rows:
+        # row: 0=Date, 1=Day, 2=Status, 3=Object, 4=Car, 5=Route, 6=Work, 7=Driving
+        driving = float(row[7] or 0)
+        # Skip rows where driving is 0 or it's not a work day
+        if row[2] != "Work" or driving <= 0:
+            continue
+
+        excel_row = [
+            row[0], row[1], row[5], row[4], row[7]
+        ]
+        ws.append(excel_row)
+        
+        for cell in ws[ws.max_row]:
+            cell.alignment = center_aligned
+
+        total_drive_hours += driving
+
+    ws.append([]) 
+
+    total_row = [
+        "", "", "", t["total_month"], round(total_drive_hours, 1)
+    ]
+    ws.append(total_row)
+
+    for cell in ws[ws.max_row]:
+        cell.font = Font(bold=True)
+        cell.alignment = center_aligned
+
+    for col in ws.columns:
+        max_length = max((len(str(cell.value)) for cell in col if cell.value is not None), default=0)
+        ws.column_dimensions[col[0].column_letter].width = (max_length * 1.25) + 3
+
+    file_buffer = io.BytesIO()
+    wb.save(file_buffer)
+    file_buffer.seek(0)
+    
+    file_name = f"Transport_{target_month}.xlsx"
+    document = BufferedInputFile(file_buffer.read(), filename=file_name)
+
+    caption_text = t.get("excel_pure_logistics_caption", "🚚 Raport dla logistyka za {month}\n🚗 Całkowity czas za kierownicą: **{hours} h.**").format(
+        month=target_month,
+        hours=round(total_drive_hours, 1)
+    )
+
+    try:
+        await bot.send_document(target_user_id, document, caption=caption_text, parse_mode="Markdown")
+    except Exception as e:
+        print(f"Failed to send pure logistics report: {e}")

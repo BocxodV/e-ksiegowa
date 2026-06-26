@@ -319,6 +319,14 @@
             >
               👨‍💼 Отчет для шефа
             </button>
+            <button
+              class="btn-main"
+              id="btn_export_logistics"
+              onclick="sendLogisticsReportReq()"
+              style="background-color: var(--highlight-blue); margin-top: 5px;"
+            >
+              🚚 Отчет для логиста
+            </button>
           </div>
 
           <p class="hint-text" id="t_export_desc">
@@ -355,6 +363,15 @@
               onclick="sendAnalyticsReq()"
             >
               📈 Показать Топ объектов
+            </button>
+            <button
+              type="button"
+              class="btn-secondary"
+              id="btn_vacation_stats"
+              onclick="sendVacationStatsReq()"
+              style="margin-top: 5px;"
+            >
+              🌴 Статус отпуска
             </button>
           </div>
 
@@ -483,6 +500,16 @@
                 step="0.1"
                 id="driveEurRateInput"
                 placeholder="0.0"
+              />
+            </div>
+            <div class="input-row row-divider">
+              <label for="totalVacationDaysInput" id="l_total_vacation"
+                >🌴 Дней отпуска в год</label
+              >
+              <input
+                type="number"
+                id="totalVacationDaysInput"
+                placeholder="26"
               />
             </div>
           </div>

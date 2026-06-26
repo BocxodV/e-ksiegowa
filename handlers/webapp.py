@@ -25,7 +25,7 @@ from database import (
     activate_user_premium, update_user_language,
     increment_shift_count, delete_work_log, get_work_logs_for_month,
     add_user_savings, get_analytics_by_location,
-    get_user_unique_records, get_work_log_id
+    get_user_unique_records, get_work_log_id, get_user_vacations
 )
 from map_service import calculate_driving_hours, get_country_by_city
 
@@ -100,7 +100,9 @@ async def build_app_url(user_id, profile=None):
     cars_str = urllib.parse.quote(",".join(history.get("cars", [])))
     locs_str = urllib.parse.quote(",".join(history.get("locations", [])))
     
-    return f"{WEB_APP_URL}?v=15&base={base:g}&extra={extra:g}&eur={eur:g}&drive={drive:g}&drive_eur={drive_eur:g}&car={default_car}&g_name={goal_name}&g_target={goal_target:g}&c_net={current_net:.1f}&c_sav={current_savings:g}&g_dead={goal_deadline}&lang={user_lang}&cars={cars_str}&locs={locs_str}"
+    total_vacation_days = profile.get("total_vacation_days", 26)
+    
+    return f"{WEB_APP_URL}?v=15&base={base:g}&extra={extra:g}&eur={eur:g}&drive={drive:g}&drive_eur={drive_eur:g}&car={default_car}&g_name={goal_name}&g_target={goal_target:g}&c_net={current_net:.1f}&c_sav={current_savings:g}&g_dead={goal_deadline}&lang={user_lang}&cars={cars_str}&locs={locs_str}&vacation={total_vacation_days}"
 
 @router.message(Command("app"))
 async def summon_web_app(message: types.Message):
@@ -369,7 +371,7 @@ async def web_app_handler(message: types.Message):
                 )
             
         elif data.get("action") == "update_settings":
-            for field in ["base_rate", "extra_rate", "rate_eur", "rate_drive", "rate_drive_eur", "goal_target"]:
+            for field in ["base_rate", "extra_rate", "rate_eur", "rate_drive", "rate_drive_eur", "goal_target", "total_vacation_days"]:
                 val = data.get(field)
                 if val is not None and str(val).strip() != "":
                     try:
@@ -407,6 +409,19 @@ async def web_app_handler(message: types.Message):
             status_msg = await message.answer(t["report_wait"].format(month=month))
             from handlers.reports import generate_boss_excel_report
             await generate_boss_excel_report(target_user_id=user_id, target_month=month, bot=message.bot)
+            try:
+                await status_msg.delete()
+            except Exception: pass
+            await increment_report_count(user_id)
+            reports_count, is_premium = await get_user_subscription_status(user_id)
+            if not is_premium and reports_count > 0 and reports_count % 5 == 0:
+                await message.answer(t["freemium"].format(count=reports_count), parse_mode="Markdown", reply_markup=get_support_keyboard(user_lang))
+
+        elif data.get("action") == "get_pure_logistics_report":
+            month = data.get("month") or datetime.now().strftime("%m.%Y")
+            status_msg = await message.answer(t["report_wait"].format(month=month))
+            from handlers.reports import generate_pure_logistics_report
+            await generate_pure_logistics_report(target_user_id=user_id, target_month=month, bot=message.bot)
             try:
                 await status_msg.delete()
             except Exception: pass
@@ -501,16 +516,50 @@ async def web_app_handler(message: types.Message):
             
             msg_text = analytics_title
             medals = ["🥇", "🥈", "🥉"]
+            h_lbl = {"ENG": "h", "PL": "h", "UKR": "год", "RUS": "ч."}.get(user_lang, "ч.")
             for i, row in enumerate(analytics_data):
                 loc, t_work, t_drive, t_net = row[0], row[1], row[2], row[3]
                 medal = medals[i] if i < 3 else "🔸"
-                msg_text += f"{medal} **{loc}**: {t_net:.2f} zł\n"
+                msg_text += f"{medal} **{loc}**: {t_net:.2f} zł (⏱ {t_work:g} {h_lbl} | 🚗 {t_drive:g} {h_lbl})\n"
 
             await message.answer_photo(
                 photo=chart_url,
                 caption=msg_text,
                 parse_mode="Markdown"
             )
+
+        elif data.get("action") == "vacation_stats":
+            vacations = await get_user_vacations(user_id)
+            profile = await get_user_profile(user_id)
+            total_allowed = profile.get("total_vacation_days", 26)
+            used = len(vacations)
+            remaining = max(0, total_allowed - used)
+
+            title_map = {
+                "RUS": "🌴 **Статус отпуска**\n\n",
+                "UKR": "🌴 **Статус відпустки**\n\n",
+                "PL": "🌴 **Status urlopu**\n\n",
+                "ENG": "🌴 **Vacation Status**\n\n"
+            }
+            stats_text = title_map.get(user_lang, title_map["RUS"])
+            
+            allowed_lbl = {"ENG": "Total allowed:", "PL": "Przysługuje rocznie:", "UKR": "Всього днів:", "RUS": "Всего дней в году:"}.get(user_lang, "Всего дней в году:")
+            used_lbl = {"ENG": "Days used:", "PL": "Wykorzystano dni:", "UKR": "Використано днів:", "RUS": "Использовано дней:"}.get(user_lang, "Использовано дней:")
+            rem_lbl = {"ENG": "Remaining days:", "PL": "Pozostało dni:", "UKR": "Залишилось днів:", "RUS": "Осталось дней:"}.get(user_lang, "Осталось дней:")
+            
+            stats_text += f"🔹 {allowed_lbl} **{total_allowed}**\n"
+            stats_text += f"🔻 {used_lbl} **{used}**\n"
+            stats_text += f"✅ {rem_lbl} **{remaining}**\n\n"
+            
+            if used > 0:
+                list_lbl = {"ENG": "Dates used:", "PL": "Wykorzystane daty:", "UKR": "Використані дати:", "RUS": "Даты отпуска:"}.get(user_lang, "Даты отпуска:")
+                stats_text += f"📅 **{list_lbl}**\n"
+                
+                # Format them nicely
+                for v in vacations:
+                    stats_text += f"▫️ {v}\n"
+                    
+            await message.answer(stats_text, parse_mode="Markdown")
 
         elif data.get("action") == "history_view":
             target_month = data.get("month")

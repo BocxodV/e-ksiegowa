@@ -33,6 +33,11 @@ export function sendBossReportReq() {
     tg.close(); 
 }
 
+export function sendLogisticsReportReq() { 
+    tg.sendData(JSON.stringify({ action: "get_pure_logistics_report", month: document.getElementById("reportMonth").value.split("-").reverse().join(".") })); 
+    tg.close(); 
+}
+
 export function sendHistoryReq() { 
     tg.sendData(JSON.stringify({ action: "history_view", month: document.getElementById("historyMonth").value.split("-").reverse().join(".") })); 
     tg.close(); 
@@ -45,6 +50,11 @@ export function sendHistoryEditReq() {
 
 export function sendAnalyticsReq() { 
     tg.sendData(JSON.stringify({ action: "analytics", month: document.getElementById("analyticsMonth").value.split("-").reverse().join(".") })); 
+    tg.close(); 
+}
+
+export function sendVacationStatsReq() { 
+    tg.sendData(JSON.stringify({ action: "vacation_stats" })); 
     tg.close(); 
 }
 
@@ -62,6 +72,9 @@ export function sendSettings() {
         if(el) data[k+"_rate"] = el.value.replace(',', '.'); 
     });
     data.goal_target = document.getElementById("goalTargetInput").value.replace(',', '.');
+    const vacationInput = document.getElementById("totalVacationDaysInput");
+    if(vacationInput) data.total_vacation_days = vacationInput.value.replace(',', '.');
+    
     tg.sendData(JSON.stringify(data)); 
     tg.close();
 }
