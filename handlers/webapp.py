@@ -23,7 +23,7 @@ from database import (
     upsert_work_log, update_user_setting,
     get_monthly_net_sum, increment_report_count, get_user_subscription_status,
     activate_user_premium, update_user_language,
-    increment_shift_count, delete_work_log, get_work_logs_for_month,
+    increment_shift_count, delete_work_log, get_work_logs_for_month, get_work_logs_for_date,
     add_user_savings, get_analytics_by_location,
     get_user_unique_records, get_work_log_id, get_user_vacations
 )
