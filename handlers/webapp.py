@@ -480,7 +480,7 @@ async def web_app_handler(message: types.Message):
                 return
             
             labels = [row[0] for row in analytics_data]
-            values = [row[3] for row in analytics_data]
+            values = [float(row[3]) if row[3] is not None else 0.0 for row in analytics_data]
             
             chart_title = {
                 "ENG": f"Earnings by objects ({target_month})",
