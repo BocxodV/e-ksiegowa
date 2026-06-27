@@ -249,31 +249,37 @@
 
           <h2><span id="t_history">История</span> <span class="help-link" onclick="window.showHelp('history')" id="l_how_it_works_history">Как это работает?</span></h2>
 
-          <div class="history-box">
+          <div class="history-box" style="margin-bottom: 10px;">
             <div class="form-group">
               <label for="historyMonth" id="l_month_history"
-                >📅 Выбери месяц:</label
+                >Выбрать месяц для просмотра:</label
               >
               <input type="month" id="historyMonth" />
             </div>
-          </div>
-
-          <div class="history-actions" style="display: flex; flex-direction: column; gap: 8px;">
             <button
               type="button"
               class="btn-history"
               id="btn_history"
               onclick="sendHistoryReq()"
+              style="width: 100%; margin-top: 8px;"
             >
-              📂 Просмотр смен
+              📄 Посмотреть смены
             </button>
+          </div>
+
+          <div class="history-box">
+            <div class="form-group">
+              <label for="historyEditDate">Выбрать день для удаления/изменения:</label>
+              <input type="date" id="historyEditDate" />
+            </div>
             <button
               type="button"
               class="btn-secondary"
               id="btn_history_edit"
               onclick="sendHistoryEditReq()"
+              style="width: 100%; margin-top: 8px;"
             >
-              ✏️ Редактирование смен
+              Удалить/Редактировать
             </button>
           </div>
 

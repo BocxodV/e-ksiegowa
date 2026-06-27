@@ -44,7 +44,14 @@ export function sendHistoryReq() {
 }
 
 export function sendHistoryEditReq() { 
-    tg.sendData(JSON.stringify({ action: "history_edit", month: document.getElementById("historyMonth").value.split("-").reverse().join(".") })); 
+    const dateVal = document.getElementById("historyEditDate").value;
+    if (!dateVal) {
+        alert("Выберите день!");
+        return;
+    }
+    const parts = dateVal.split("-");
+    const dateStr = `${parts[2]}.${parts[1]}.${parts[0]}`;
+    tg.sendData(JSON.stringify({ action: "history_edit", date: dateStr })); 
     tg.close(); 
 }
 
