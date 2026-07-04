@@ -505,7 +505,9 @@ async def web_app_handler(message: types.Message):
             }
             
             encoded_config = urllib.parse.quote(json.dumps(chart_config))
-            chart_url = f"https://quickchart.io/chart?c={encoded_config}&width=500&height=300&bkg=white"
+            quickchart_key = os.environ.get("QUICKCHART_API_KEY", "")
+            key_param = f"key={quickchart_key}&" if quickchart_key else ""
+            chart_url = f"https://quickchart.io/chart?{key_param}c={encoded_config}&width=500&height=300&bkg=white"
 
             analytics_title = {
                 "ENG": f"📊 **Analytics by objects for {target_month}**\n\n",
