@@ -41,7 +41,7 @@ async def parse_shift_text(raw_text: str) -> dict:
     """
     current_date = datetime.now().strftime("%Y-%m-%d")
     
-    client = genai.Client()
+    client = genai.Client(vertexai=True, project="kasia-497909", location="us-central1")
     
     prompt = f"""Ты — высокоточный парсер данных для бухгалтерского учета. Твоя задача — извлекать факты из неструктурированного текста пользователя и возвращать их СТРОГО в формате JSON.
 
@@ -67,7 +67,7 @@ is_abroad: true, если юзер упоминает работу за гран
 {raw_text}"""
     
     response = await client.aio.models.generate_content(
-        model="gemini-3.5-flash",
+        model="gemini-2.5-flash",
         contents=prompt,
         config=types.GenerateContentConfig(
             response_mime_type="application/json",

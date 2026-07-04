@@ -149,6 +149,15 @@ async def get_all_users():
     async with p.acquire() as db:
         return await db.fetch("SELECT user_id FROM users")
 
+async def get_work_logs_for_date(user_id, log_date):
+    p = await get_pool()
+    async with p.acquire() as db:
+        return await db.fetch('''
+            SELECT log_date, day_of_week, status, location, car, route, work_hours, driving_hours, hours_50, hours_100, is_trip, bonuses, gross, net, is_abroad
+            FROM work_logs
+            WHERE user_id = $1 AND log_date = $2
+        ''', user_id, log_date)
+
 async def get_work_logs_for_month(user_id, month_year):
     p = await get_pool()
     async with p.acquire() as db:

@@ -13,7 +13,7 @@ router = Router()
 logger = logging.getLogger(__name__)
 
 # Initialize GenAI client using our API key
-client = genai.Client(api_key=GEMINI_API_KEY)
+client = genai.Client(vertexai=True, project="kasia-497909", location="us-central1")
 
 @router.message(F.voice)
 async def handle_voice_shift(message: types.Message):
@@ -36,7 +36,7 @@ async def handle_voice_shift(message: types.Message):
         
         await status_msg.edit_text("🧠 Расшифровываю аудио...")
         response = await client.aio.models.generate_content(
-            model='gemini-3.5-flash',
+            model='gemini-2.5-flash',
             contents=[prompt_text, audio_part],
             config=genai_types.GenerateContentConfig(temperature=0.1)
         )

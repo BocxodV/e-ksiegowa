@@ -11,7 +11,7 @@ from texts import TRANSLATIONS
 router = Router()
 logger = logging.getLogger(__name__)
 
-client = genai.Client(api_key=GEMINI_API_KEY)
+client = genai.Client(vertexai=True, project="kasia-497909", location="us-central1")
 
 # Core image processing helper function (available for WebApp integration)
 async def process_image_bytes(image_bytes: bytes) -> dict:
@@ -23,7 +23,7 @@ async def process_image_bytes(image_bytes: bytes) -> dict:
     Если чего-то нет на фото, оставь значение пустым.
     """
     response = await client.aio.models.generate_content(
-        model='gemini-3.5-flash',
+        model='gemini-2.5-flash',
         contents=[
             prompt,
             genai_types.Part.from_bytes(data=image_bytes, mime_type='image/jpeg')
