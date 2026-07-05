@@ -1,7 +1,7 @@
 # config.py
 import os
 from dotenv import load_dotenv
-from google import genai
+import google.auth
 
 load_dotenv()
 

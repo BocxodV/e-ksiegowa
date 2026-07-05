@@ -1,36 +1,7 @@
 import json
 from datetime import datetime
-from typing import Optional, Literal
-from pydantic import BaseModel, Field
-from google.genai import types
 
-from config import gemini_client
-
-class ShiftInfo(BaseModel):
-    date: Optional[str] = Field(
-        None, 
-        description="The date of the shift in YYYY-MM-DD format, or null if not found"
-    )
-    work_hours: Optional[float] = Field(
-        None, 
-        description="The total number of work hours, or null if not found"
-    )
-    driving_hours: Optional[float] = Field(
-        None, 
-        description="The total number of driving hours, or null if not found"
-    )
-    location: Optional[str] = Field(
-        None, 
-        description="The location of the shift (e.g. city, country), or null if not found"
-    )
-    status: Optional[Literal["Work", "L4", "Urlop"]] = Field(
-        None, 
-        description="The status of the shift: 'Work' (working day), 'L4' (sick leave), 'Urlop' (vacation/holiday), or null"
-    )
-    is_abroad: Optional[bool] = Field(
-        False,
-        description="True if the user mentions working abroad, False otherwise"
-    )
+from config import call_vertex_ai
 
 async def parse_shift_text(raw_text: str) -> dict:
     """
@@ -62,17 +33,7 @@ is_abroad: true, если юзер упоминает работу за гран
 Текст пользователя для анализа:
 {raw_text}"""
     
-    response = await gemini_client.aio.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            response_schema=ShiftInfo,
-            temperature=0.1,
-        )
-    )
+    contents = [{"role": "user", "parts": [{"text": prompt}]}]
     
-    if response.parsed:
-        return response.parsed.model_dump()
-    
-    return json.loads(response.text)
+    response_text = await call_vertex_ai(contents, response_mime_type="application/json")
+    return json.loads(response_text)
