@@ -15,6 +15,12 @@ ADMIN_ID = int(os.getenv("ADMIN_ID", "0"))
 DIET_VALUE = 45.0
 NIGHT_COEFF = 0.2
 
+import google.auth
+
 # Shared Gemini client singleton — created ONCE at startup, used everywhere
 # Uses Vertex AI with Cloud Run service account (ADC) — no API key needed
-gemini_client = genai.Client(vertexai=True, project="kasia-497909", location="us-central1")
+try:
+    credentials, project_id = google.auth.default()
+except Exception as e:
+    credentials = None
+gemini_client = genai.Client(vertexai=True, project="kasia-497909", location="us-central1", credentials=credentials, http_options={'api_version': 'v1beta1'})
