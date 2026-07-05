@@ -7,4 +7,6 @@ pytz>=2024.1
 aiohttp
 python-dotenv
 openpyxl>=3.1.5
-langgraph
+langgraph
+requests
+google-auth
