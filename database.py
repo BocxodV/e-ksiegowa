@@ -11,7 +11,12 @@ pool = None
 async def get_pool():
     global pool
     if pool is None:
-        pool = await asyncpg.create_pool(DATABASE_URL)
+        pool = await asyncpg.create_pool(
+            DATABASE_URL,
+            min_size=2,   # keep 2 warm connections ready
+            max_size=10,  # max 10 concurrent connections
+            command_timeout=30
+        )
     return pool
 
 async def init_db():
@@ -81,6 +86,18 @@ async def init_db():
             await db.execute("ALTER TABLE work_logs ADD COLUMN IF NOT EXISTS is_abroad INTEGER DEFAULT 0")
         except Exception:
             pass
+
+        # user_drafts table for stateless resilience (voice confirmation flow)
+        await db.execute('''
+            CREATE TABLE IF NOT EXISTS user_drafts (
+                user_id BIGINT,
+                msg_id TEXT,
+                draft_data TEXT,
+                raw_input TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (user_id, msg_id)
+            )
+        ''')
 
 async def get_user_profile(user_id):
     p = await get_pool()
@@ -326,16 +343,6 @@ async def save_user_draft(user_id: int, msg_id: int, parsed_data: dict, raw_inpu
     p = await get_pool()
     draft_json = json.dumps(parsed_data)
     async with p.acquire() as db:
-        await db.execute('''
-            CREATE TABLE IF NOT EXISTS user_drafts (
-                user_id BIGINT,
-                msg_id TEXT,
-                draft_data TEXT,
-                raw_input TEXT,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY (user_id, msg_id)
-            )
-        ''')
         await db.execute('''
             INSERT INTO user_drafts (user_id, msg_id, draft_data, raw_input, updated_at)
             VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)

@@ -1,23 +1,28 @@
 import json
 import logging
 from datetime import datetime
-from google import genai
 from google.genai import types as genai_types
 from aiogram import Router, F, types
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, WebAppInfo, MenuButtonWebApp
 
-from config import GEMINI_API_KEY
+from config import gemini_client
 from app.graph import app_graph
 from app.state import AgentState
+from database import get_user_profile, get_pool, increment_shift_count, save_user_draft, get_user_draft
+from texts import TRANSLATIONS, get_random_motivation
+from handlers.webapp import build_app_url
+from map_service import get_country_by_city
 
 router = Router()
 logger = logging.getLogger(__name__)
 
-# Initialize GenAI client using our API key
-client = genai.Client(vertexai=True, project="kasia-497909", location="us-central1")
-
 @router.message(F.voice)
 async def handle_voice_shift(message: types.Message):
-    status_msg = await message.answer("🎧 Слушаю и анализирую...")
+    user_id = message.from_user.id
+    profile = await get_user_profile(user_id)
+    t = TRANSLATIONS.get(profile.get("lang", "RUS"), TRANSLATIONS["RUS"])
+
+    status_msg = await message.answer(t.get("voice_status_listening", "🎧 Слушаю и анализирую..."))
     
     try:
         # 1. Download voice message directly into memory
@@ -34,8 +39,8 @@ async def handle_voice_shift(message: types.Message):
         Сегодняшняя дата: {today_str}.
         """
         
-        await status_msg.edit_text("🧠 Расшифровываю аудио...")
-        response = await client.aio.models.generate_content(
+        await status_msg.edit_text(t.get("voice_status_transcribing", "🧠 Расшифровываю аудио..."))
+        response = await gemini_client.aio.models.generate_content(
             model='gemini-2.5-flash',
             contents=[prompt_text, audio_part],
             config=genai_types.GenerateContentConfig(temperature=0.1)
@@ -56,8 +61,7 @@ async def handle_voice_shift(message: types.Message):
         config = {"configurable": {"thread_id": f"{message.from_user.id}_{message.message_id}"}}
         
         # 5. Run the graph until the human_review interrupt point
-        await status_msg.edit_text("🤖 Анализирую смену с помощью ИИ...")
-        user_id = message.from_user.id
+        await status_msg.edit_text(t.get("voice_status_analyzing", "🤖 Анализирую смену с помощью ИИ..."))
         raw_text = transcribed_text
         logger.info(f"🚀 Запуск графа для пользователя {user_id}. Входной текст: '{raw_text}'")
         async for event in app_graph.astream(initial_state, config=config):
@@ -78,26 +82,28 @@ async def handle_voice_shift(message: types.Message):
             
         # 8. Save shift draft to PostgreSQL and send for user confirmation
         parsed_data = current_state.get("parsed_data") or {}
-        from database import save_user_draft
         await save_user_draft(message.from_user.id, message.message_id, parsed_data, transcribed_text)
-        
+
+        # Use the already fetched translation dictionary
+        unk = t["draft_unknown"]
+
         draft_msg = (
-            f"📝 **Черновик смены:**\n\n"
-            f"📅 Дата: `{parsed_data.get('date') or 'Не указана'}`\n"
-            f"📍 Локация: `{parsed_data.get('location') or 'Не указана'}`\n"
-            f"🕒 Работа: `{parsed_data.get('work_hours') or 0.0} ч.`\n"
-            f"🚗 Вождение: `{parsed_data.get('driving_hours') or 0.0} ч.`\n"
-            f"📋 Статус: `{parsed_data.get('status') or 'Не указан'}`\n\n"
-            f"**Сохранить эту смену в базу данных?**"
+            f"{t['draft_title']}\n\n"
+            f"{t['draft_date']}: `{parsed_data.get('date') or unk}`\n"
+            f"{t['draft_location']}: `{parsed_data.get('location') or unk}`\n"
+            f"{t['draft_work']}: `{parsed_data.get('work_hours') or 0.0} h`\n"
+            f"{t['draft_drive']}: `{parsed_data.get('driving_hours') or 0.0} h`\n"
+            f"{t['draft_status_label']}: `{parsed_data.get('status') or unk}`\n\n"
+            f"{t['draft_confirm']}"
         )
-        
+
         kb = types.InlineKeyboardMarkup(inline_keyboard=[
             [
-                types.InlineKeyboardButton(text="Да ✅", callback_data=f"confirm_shift_yes:{message.message_id}"),
-                types.InlineKeyboardButton(text="Нет ❌", callback_data=f"confirm_shift_no:{message.message_id}")
+                types.InlineKeyboardButton(text=t["btn_yes"], callback_data=f"confirm_shift_yes:{message.message_id}"),
+                types.InlineKeyboardButton(text=t["btn_no"], callback_data=f"confirm_shift_no:{message.message_id}")
             ]
         ])
-        
+
         await status_msg.delete()
         await message.answer(draft_msg, reply_markup=kb, parse_mode="Markdown")
         
@@ -171,11 +177,6 @@ async def handle_confirm_yes(callback: types.CallbackQuery):
         formatted_date = date_obj.strftime("%d.%m.%Y")
         
         # Fetch profile and localization
-        from database import get_user_profile, get_pool, increment_shift_count
-        from texts import TRANSLATIONS, get_random_motivation
-        from handlers.webapp import build_app_url
-        from map_service import get_country_by_city
-        from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, WebAppInfo, MenuButtonWebApp
         
         profile = await get_user_profile(user_id)
         user_lang = profile.get("lang", "RUS")
@@ -191,8 +192,7 @@ async def handle_confirm_yes(callback: types.CallbackQuery):
             ''', user_id, formatted_date)
             
         if not row:
-            # Fallback if record was not found
-            await status_msg.edit_text("✅ **Смена успешно сохранена в базу данных!**", parse_mode="Markdown")
+            await status_msg.edit_text(t["shift_saved_fallback"], parse_mode="Markdown")
             return
             
         day_name = row['day_of_week']
@@ -229,7 +229,7 @@ async def handle_confirm_yes(callback: types.CallbackQuery):
         # WebApp integration and shift count
         dyn_url = await build_app_url(user_id, profile)
         total_shifts = await increment_shift_count(user_id)
-        coffee_msg = f"\n\n☕️ <i>Всего смен: {total_shifts} | <a href='https://www.buymeacoffee.com/bocxodv'>Угостить Касю кофе</a></i>"
+        coffee_msg = f"\n\n☕️ <i>{t['shift_total_count'].format(total=total_shifts)} | <a href='https://www.buymeacoffee.com/bocxodv'>{t['coffee_invite']}</a></i>"
         
         # Motivation text
         motivation_text = get_random_motivation(user_lang)
@@ -238,19 +238,19 @@ async def handle_confirm_yes(callback: types.CallbackQuery):
         card_money = gross * tax_coeff_val
         
         final_text = (
-            "🧾 <b>СМЕНА ЗАКРЫТА</b> 🧾\n"
+            f"{t['shift_closed']}\n"
             "━━━━━━━━━━━━━━━━━━━━\n"
-            f"📅 <b>Дата:</b> {date_obj.strftime('%d.%m.%Y')} ({day_name})\n"
-            f"🛠 <b>Статус:</b> {status_icon}\n"
-            f"📍 <b>Объект:</b> {location} {country_flag}\n"
+            f"{t['shift_date']} {date_obj.strftime('%d.%m.%Y')} ({day_name})\n"
+            f"{t['shift_status_label']} {status_icon}\n"
+            f"{t['shift_object']} {location} {country_flag}\n"
             "┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n"
-            f"⏱ На объекте: <code>{work_hours:.1f} ч.</code>\n"
-            f"🚗 За рулем:   <code>{driving_hours:.1f} ч.</code>\n"
+            f"{t['shift_onsite']} <code>{work_hours:.1f} h</code>\n"
+            f"{t['shift_driving']}   <code>{driving_hours:.1f} h</code>\n"
             "┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n"
-            "💰 <b>ИТОГИ ДНЯ:</b>\n"
-            f"💵 На руки:   <code>{net:.2f} zł</code>\n"
-            f"📄 Брутто:    <code>{gross:.2f} zł</code>\n"
-            f"💳 На карту:  <code>{card_money:.2f} zł</code>\n"
+            f"{t['shift_daily_total']}\n"
+            f"{t['shift_net']}   <code>{net:.2f} zł</code>\n"
+            f"{t['shift_gross']}    <code>{gross:.2f} zł</code>\n"
+            f"{t['shift_card']}  <code>{card_money:.2f} zł</code>\n"
             f"⚖️ Nierozliczone saldo: <code>{bonuses:.2f} zł</code>\n"
             "━━━━━━━━━━━━━━━━━━━━\n"
             f"<i>{motivation_text}</i>\n"
@@ -279,11 +279,14 @@ async def handle_confirm_yes(callback: types.CallbackQuery):
     except Exception as e:
         logger.error(f"Error saving shift via callback: {e}", exc_info=True)
         try:
-            await status_msg.edit_text("⚠️ Ошибка при сохранении смены в базу данных.")
+            await status_msg.edit_text(t.get("shift_error_save", "⚠️ Error saving shift."))
         except Exception:
             pass
 
 @router.callback_query(F.data.startswith("confirm_shift_no"))
 async def handle_confirm_no(callback: types.CallbackQuery):
     await callback.answer()
-    await callback.message.edit_text("❌ **Ввод смены отменен.**", parse_mode="Markdown")
+    user_id = callback.from_user.id
+    profile = await get_user_profile(user_id)
+    t = TRANSLATIONS.get(profile.get("lang", "RUS"), TRANSLATIONS["RUS"])
+    await callback.message.edit_text(t["shift_cancelled"], parse_mode="Markdown")

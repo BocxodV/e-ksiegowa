@@ -60,7 +60,7 @@ export async function triggerCarScan() {
 
             try {
                 // Trigger direct API request to Cloud Run gateway
-                const backendUrl = "https://e-ksiegowa-254558688282.europe-central2.run.app/api/scan-car";
+                const backendUrl = "https://kasia-bot-254558688282.europe-central2.run.app/api/scan-car";
                 const response = await fetch(backendUrl, { method: "POST", body: formData });
                 
                 if (response.ok) {

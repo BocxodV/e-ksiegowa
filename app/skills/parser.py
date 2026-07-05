@@ -2,11 +2,9 @@ import json
 from datetime import datetime
 from typing import Optional, Literal
 from pydantic import BaseModel, Field
-from google import genai
 from google.genai import types
 
-# Import config to ensure environment variables (like GEMINI_API_KEY) are loaded
-import config
+from config import gemini_client
 
 class ShiftInfo(BaseModel):
     date: Optional[str] = Field(
@@ -37,11 +35,9 @@ class ShiftInfo(BaseModel):
 async def parse_shift_text(raw_text: str) -> dict:
     """
     Parses unstructured text about a work shift and returns a structured dictionary
-    matching the ShiftInfo schema using Gemini 3.5 Flash.
+    matching the ShiftInfo schema using Gemini 2.5 Flash via Vertex AI.
     """
     current_date = datetime.now().strftime("%Y-%m-%d")
-    
-    client = genai.Client(vertexai=True, project="kasia-497909", location="us-central1")
     
     prompt = f"""Ты — высокоточный парсер данных для бухгалтерского учета. Твоя задача — извлекать факты из неструктурированного текста пользователя и возвращать их СТРОГО в формате JSON.
 
@@ -66,7 +62,7 @@ is_abroad: true, если юзер упоминает работу за гран
 Текст пользователя для анализа:
 {raw_text}"""
     
-    response = await client.aio.models.generate_content(
+    response = await gemini_client.aio.models.generate_content(
         model="gemini-2.5-flash",
         contents=prompt,
         config=types.GenerateContentConfig(

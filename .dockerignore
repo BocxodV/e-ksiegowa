@@ -1,6 +1,40 @@
+﻿# === СЕКРЕТЫ - НИКОГДА В ОБРАЗ ===
 .env
-.venv
+service_account.json
+service-account-key.json
+env.yaml
+*.key
+*.pem
+
+# === ВИРТУАЛЬНЫЕ ОКРУЖЕНИЯ ===
 venv/
+.venv/
+
+# === GIT ===
+.git/
+.gitignore
+
+# === КЭШ И ВРЕМЕННЫЕ ФАЙЛЫ ===
 __pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+
+# === ЛОКАЛЬНЫЕ БД И ЛОГИ ===
+bot_database.db
 *.db
-.git
+*.log
+
+# === ТЕСТОВЫЕ И ОДНОРАЗОВЫЕ СКРИПТЫ ===
+test_gemini*.py
+fix*.py
+check_krono.py
+update_krono.py
+migrate.py
+sqlite_schema.json
+
+# === IDE ===
+.idea/
+.vscode/
+*.swp
+README*

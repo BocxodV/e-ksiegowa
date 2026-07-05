@@ -1,17 +1,14 @@
 import json
 import logging
-from google import genai
 from google.genai import types as genai_types
 from aiogram import Router, F, types
 
-from config import GEMINI_API_KEY
+from config import gemini_client
 from database import update_user_setting, get_user_profile
 from texts import TRANSLATIONS
 
 router = Router()
 logger = logging.getLogger(__name__)
-
-client = genai.Client(vertexai=True, project="kasia-497909", location="us-central1")
 
 # Core image processing helper function (available for WebApp integration)
 async def process_image_bytes(image_bytes: bytes) -> dict:
@@ -22,7 +19,7 @@ async def process_image_bytes(image_bytes: bytes) -> dict:
     Формат: {"car": "Марка и Модель", "plate": "НОМЕР"}
     Если чего-то нет на фото, оставь значение пустым.
     """
-    response = await client.aio.models.generate_content(
+    response = await gemini_client.aio.models.generate_content(
         model='gemini-2.5-flash',
         contents=[
             prompt,
