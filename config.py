@@ -15,19 +15,57 @@ ADMIN_ID = int(os.getenv("ADMIN_ID", "0"))
 DIET_VALUE = 45.0
 NIGHT_COEFF = 0.2
 
-import google.auth
+# Removed google-genai client initialization to use stable raw REST API
+import aiohttp
+from google.auth.transport.requests import Request
 
-# Force remove any legacy API keys that confuse the new google-genai SDK
-if 'GEMINI_API_KEY' in os.environ:
-    del os.environ['GEMINI_API_KEY']
-if 'GOOGLE_API_KEY' in os.environ:
-    del os.environ['GOOGLE_API_KEY']
+# Helper to get the access token for Vertex AI
+async def get_vertex_token():
+    try:
+        credentials, project_id = google.auth.default(scopes=['https://www.googleapis.com/auth/cloud-platform'])
+        credentials.refresh(Request())
+        return credentials.token
+    except Exception as e:
+        import logging
+        logging.error(f"Failed to get ADC token: {e}")
+        return None
 
-# Shared Gemini client singleton — created ONCE at startup, used everywhere
-# Uses Vertex AI with Cloud Run service account (ADC) — no API key needed
-try:
-    credentials, project_id = google.auth.default()
-except Exception as e:
-    credentials = None
+# Direct call to Vertex AI REST API
+async def call_vertex_ai(contents, system_instruction=None, response_mime_type="text/plain"):
+    token = await get_vertex_token()
+    if not token:
+        raise Exception("No GCP credentials available")
 
-gemini_client = genai.Client(vertexai=True, project="kasia-497909", location="us-central1", credentials=credentials)
+    # Hardcoded to kasia-497909 to avoid any project resolution issues
+    url = "https://us-central1-aiplatform.googleapis.com/v1/projects/kasia-497909/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "contents": contents,
+        "generationConfig": {
+            "responseMimeType": response_mime_type,
+            "temperature": 0.1
+        }
+    }
+    
+    if system_instruction:
+        payload["systemInstruction"] = {
+            "parts": [{"text": system_instruction}]
+        }
+
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, headers=headers, json=payload) as resp:
+            data = await resp.json()
+            if resp.status != 200:
+                raise Exception(f"Vertex API Error {resp.status}: {data}")
+            
+            # Parse response
+            try:
+                return data["candidates"][0]["content"]["parts"][0]["text"]
+            except KeyError:
+                import logging
+                logging.error(f"Unexpected Vertex response structure: {data}")
+                return ""

@@ -1,11 +1,11 @@
 import json
 import logging
 from datetime import datetime
-from google.genai import types as genai_types
+import base64
 from aiogram import Router, F, types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, WebAppInfo, MenuButtonWebApp
 
-from config import gemini_client
+from config import call_vertex_ai
 from app.graph import app_graph
 from app.state import AgentState
 from database import get_user_profile, get_pool, increment_shift_count, save_user_draft, get_user_draft
@@ -29,9 +29,9 @@ async def handle_voice_shift(message: types.Message):
         file_info = await message.bot.get_file(message.voice.file_id)
         downloaded_file = await message.bot.download_file(file_info.file_path)
         audio_bytes = downloaded_file.read()
-        audio_part = genai_types.Part.from_bytes(data=audio_bytes, mime_type='audio/ogg')
+        b64_audio = base64.b64encode(audio_bytes).decode('utf-8')
         
-        # 2. Transcribe voice message using Gemini
+        # 2. Transcribe voice message using Vertex AI
         today_str = datetime.now().strftime("%Y-%m-%d")
         prompt_text = f"""
         Ты — финансовый AI-ассистент. Твоя единственная задача — прослушать это голосовое сообщение от работника и перевести его в текст (сделать точную транскрипцию). 
@@ -39,13 +39,17 @@ async def handle_voice_shift(message: types.Message):
         Сегодняшняя дата: {today_str}.
         """
         
+        contents = [{
+            "role": "user",
+            "parts": [
+                {"text": prompt_text},
+                {"inlineData": {"mimeType": "audio/ogg", "data": b64_audio}}
+            ]
+        }]
+        
         await status_msg.edit_text(t.get("voice_status_transcribing", "🧠 Расшифровываю аудио..."))
-        response = await gemini_client.aio.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=[prompt_text, audio_part],
-            config=genai_types.GenerateContentConfig(temperature=0.1)
-        )
-        transcribed_text = response.text.strip()
+        transcribed_text = await call_vertex_ai(contents)
+        transcribed_text = transcribed_text.strip()
         logger.info(f"Transcribed voice: '{transcribed_text}'")
         
         # 3. Setup initial state for LangGraph Agent

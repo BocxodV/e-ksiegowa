@@ -2,7 +2,6 @@
 import { tg, initTelegram } from './core/telegram.js';
 import { state, TRANSLATIONS } from './core/state.js';
 import { openTab, setupSwipes, updatePolaroid } from './modules/tabs.js';
-import { triggerCarScan } from './modules/camera.js';
 import { sendShift, sendReportReq, sendBossReportReq, sendLogisticsReportReq, sendHistoryReq, sendHistoryEditReq, sendAnalyticsReq, sendVacationStatsReq, sendSettings, sendAuditReq, openGoogleMaps, sendFeedback } from './modules/api.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -195,7 +194,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Bind handlers globally for HTML onclick listeners ---
     window.openTab = openTab;
     window.changeLanguage = changeLanguage;
-    window.triggerCarScan = triggerCarScan;
     window.sendShift = sendShift;
     window.sendReportReq = sendReportReq;
     window.sendBossReportReq = sendBossReportReq;

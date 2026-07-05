@@ -1,9 +1,9 @@
 import json
 import logging
-from google.genai import types as genai_types
+import base64
 from aiogram import Router, F, types
 
-from config import gemini_client
+from config import call_vertex_ai
 from database import update_user_setting, get_user_profile
 from texts import TRANSLATIONS
 
@@ -19,18 +19,17 @@ async def process_image_bytes(image_bytes: bytes) -> dict:
     Формат: {"car": "Марка и Модель", "plate": "НОМЕР"}
     Если чего-то нет на фото, оставь значение пустым.
     """
-    response = await gemini_client.aio.models.generate_content(
-        model='gemini-2.5-flash',
-        contents=[
-            prompt,
-            genai_types.Part.from_bytes(data=image_bytes, mime_type='image/jpeg')
-        ],
-        config=genai_types.GenerateContentConfig(
-            response_mime_type="application/json",
-            temperature=0.1
-        )
-    )
-    return json.loads(response.text)
+    b64_img = base64.b64encode(image_bytes).decode('utf-8')
+    contents = [{
+        "role": "user",
+        "parts": [
+            {"text": prompt},
+            {"inlineData": {"mimeType": "image/jpeg", "data": b64_img}}
+        ]
+    }]
+    
+    response_text = await call_vertex_ai(contents, response_mime_type="application/json")
+    return json.loads(response_text)
 
 # Telegram message handler for photo messages
 @router.message(F.photo)
