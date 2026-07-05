@@ -17,10 +17,17 @@ NIGHT_COEFF = 0.2
 
 import google.auth
 
+# Force remove any legacy API keys that confuse the new google-genai SDK
+if 'GEMINI_API_KEY' in os.environ:
+    del os.environ['GEMINI_API_KEY']
+if 'GOOGLE_API_KEY' in os.environ:
+    del os.environ['GOOGLE_API_KEY']
+
 # Shared Gemini client singleton — created ONCE at startup, used everywhere
 # Uses Vertex AI with Cloud Run service account (ADC) — no API key needed
 try:
     credentials, project_id = google.auth.default()
 except Exception as e:
     credentials = None
-gemini_client = genai.Client(vertexai=True, project="kasia-497909", location="us-central1", credentials=credentials, http_options={'api_version': 'v1beta1'})
+
+gemini_client = genai.Client(vertexai=True, project="kasia-497909", location="us-central1", credentials=credentials)
