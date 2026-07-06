@@ -3,6 +3,8 @@
 Capstone Project for the Kaggle **"5-Day AI Agents" Intensive** > **Track:** Agents for Business  
 **Deployment:** Production-ready on Google Cloud Run  
 
+🎥 **Demo Video:** [Watch on YouTube](https://youtube.com/shorts/zbf-DZaYZeg)
+
 ---
 
 ## 📊 Business Value & Problem Statement
