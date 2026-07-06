@@ -79,15 +79,46 @@ async def handle_clarification_reply(message: types.Message, state: FSMContext):
         if message.voice:
             new_text = await process_voice_message(message, status_msg, t)
         else:
+            await status_msg.delete()
             new_text = message.text
+            status_msg = await message.answer("🤖 Обрабатываю...")
             
         data = await state.get_data()
-        previous_raw = data.get("raw_input", "")
+        stored_parsed = data.get("parsed_data", {})
         
-        # Combine previous context with new clarification
-        combined_text = f"{previous_raw}\n\n[Уточнение от пользователя]: {new_text}"
-        await state.clear() # Clear state before running graph
-        await run_shift_graph(message, combined_text, status_msg, t, state)
+        # Parse ONLY the short clarification answer for missing fields
+        await status_msg.edit_text("🤖 Анализирую ответ...")
+        from app.skills.parser import parse_shift_text
+        new_parsed = await parse_shift_text(new_text)
+        
+        # Merge: only overwrite fields that are now provided (non-null, non-zero for hours)
+        merged = dict(stored_parsed)
+        for key, val in new_parsed.items():
+            if key == "work_hours" and val:  # non-zero and non-None
+                merged[key] = val
+            elif key == "driving_hours" and val is not None:  # 0 is valid for driving
+                merged[key] = val
+            elif key in ("location", "date", "status", "is_abroad") and val:
+                merged[key] = val
+        
+        logger.info(f"🔀 Мерж черновиков: {stored_parsed} + {new_parsed} = {merged}")
+        
+        # Validate merged data
+        from app.skills.guardrails import validate_shift_data
+        errors = validate_shift_data(merged)
+        
+        if errors:
+            # Still missing something — ask only the FIRST remaining question
+            question = "⚠️ **Уточните данные смены:**\n• " + errors[0]
+            await status_msg.delete()
+            await message.answer(question, parse_mode="Markdown")
+            # Update state with merged parsed_data
+            await state.update_data(parsed_data=merged)
+            return
+        
+        # All good — show draft
+        await state.clear()
+        await show_draft(message, merged, status_msg, t)
         
     except Exception as e:
         logger.error(f"Clarification Error: {e}", exc_info=True)
@@ -123,42 +154,43 @@ async def run_shift_graph(message: types.Message, raw_text: str, status_msg: typ
         # 7. Check for validation errors / Clarification needed
         clarification = current_state.get("clarification_question")
         if clarification:
+            parsed_data = current_state.get("parsed_data") or {}
             await status_msg.delete()
-            await message.answer(clarification, parse_mode="Markdown")
+            # Ask only the FIRST question to avoid overwhelming the user
+            first_question = clarification.split("\n")[0] + "\n" + (clarification.split("\n")[1] if "\n" in clarification else "")
+            await message.answer(first_question.strip(), parse_mode="Markdown")
             await state.set_state(ShiftValidationState.waiting_for_clarification)
-            await state.update_data(raw_input=raw_text)
+            # Store current parsed_data for merging, not just raw text
+            await state.update_data(parsed_data=parsed_data)
             return
             
-        # 8. Save shift draft to PostgreSQL and send for user confirmation
+        # 8. All data is valid - show draft
         parsed_data = current_state.get("parsed_data") or {}
-        await save_user_draft(message.from_user.id, message.message_id, parsed_data, raw_text)
-
-        # Use the already fetched translation dictionary
-        unk = t["draft_unknown"]
-
-        draft_msg = (
-            f"{t['draft_title']}\n\n"
-            f"{t['draft_date']}: `{parsed_data.get('date') or unk}`\n"
-            f"{t['draft_location']}: `{parsed_data.get('location') or unk}`\n"
-            f"{t['draft_work']}: `{parsed_data.get('work_hours') or 0.0} h`\n"
-            f"{t['draft_drive']}: `{parsed_data.get('driving_hours') or 0.0} h`\n"
-            f"{t['draft_status_label']}: `{parsed_data.get('status') or unk}`\n\n"
-            f"{t['draft_confirm']}"
-        )
-
-        kb = types.InlineKeyboardMarkup(inline_keyboard=[
-            [
-                types.InlineKeyboardButton(text=t["btn_yes"], callback_data=f"confirm_shift_yes:{message.message_id}"),
-                types.InlineKeyboardButton(text=t["btn_no"], callback_data=f"confirm_shift_no:{message.message_id}")
-            ]
-        ])
-
-        await status_msg.delete()
-        await message.answer(draft_msg, reply_markup=kb, parse_mode="Markdown")
+        await show_draft(message, parsed_data, status_msg, t)
         
     except Exception as e:
         logger.error(f"Graph execution Error: {e}", exc_info=True)
         await status_msg.edit_text(f"⚠️ Системная ошибка: {str(e)}")
+
+async def show_draft(message: types.Message, parsed_data: dict, status_msg: types.Message, t: dict):
+    """Saves draft to DB and shows confirmation card to user."""
+    await save_user_draft(message.from_user.id, message.message_id, parsed_data, parsed_data.get("raw_input", ""))
+    unk = t["draft_unknown"]
+    draft_msg = (
+        f"{t['draft_title']}\n\n"
+        f"{t['draft_date']}: `{parsed_data.get('date') or unk}`\n"
+        f"{t['draft_location']}: `{parsed_data.get('location') or unk}`\n"
+        f"{t['draft_work']}: `{parsed_data.get('work_hours') or 0.0} h`\n"
+        f"{t['draft_drive']}: `{parsed_data.get('driving_hours') or 0.0} h`\n"
+        f"{t['draft_status_label']}: `{parsed_data.get('status') or unk}`\n\n"
+        f"{t['draft_confirm']}"
+    )
+    kb = types.InlineKeyboardMarkup(inline_keyboard=[[
+        types.InlineKeyboardButton(text=t["btn_yes"], callback_data=f"confirm_shift_yes:{message.message_id}"),
+        types.InlineKeyboardButton(text=t["btn_no"], callback_data=f"confirm_shift_no:{message.message_id}")
+    ]])
+    await status_msg.delete()
+    await message.answer(draft_msg, reply_markup=kb, parse_mode="Markdown")
 
 @router.callback_query(F.data.startswith("confirm_shift_yes"))
 async def handle_confirm_yes(callback: types.CallbackQuery):
