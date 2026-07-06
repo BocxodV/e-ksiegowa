@@ -85,23 +85,27 @@ async def handle_clarification_reply(message: types.Message, state: FSMContext):
             
         data = await state.get_data()
         stored_parsed = data.get("parsed_data", {})
+        last_question = data.get("last_question", "")
         
-        # Parse ONLY the short clarification answer for missing fields
+        # Context-aware update: LLM sees the current draft AND the question that was asked
         await status_msg.edit_text("🤖 Анализирую ответ...")
-        from app.skills.parser import parse_shift_text
-        new_parsed = await parse_shift_text(new_text)
+        import json as _json
+        context_prompt = f"""You are updating a work shift record. Here is the current (partially filled) shift data:
+{_json.dumps(stored_parsed, ensure_ascii=False)}
+
+The user was asked: "{last_question}"
+The user's answer: "{new_text}"
+
+Update ONLY the fields that the user answered. Do NOT change fields that were already filled unless the user explicitly changed them.
+Do NOT reset any field to null or 0 unless the user explicitly said so.
+Return the complete updated JSON with all fields: date, work_hours, driving_hours, location, status, is_abroad."""
         
-        # Merge: only overwrite fields that are now provided (non-null, non-zero for hours)
-        merged = dict(stored_parsed)
-        for key, val in new_parsed.items():
-            if key == "work_hours" and val:  # non-zero and non-None
-                merged[key] = val
-            elif key == "driving_hours" and val is not None:  # 0 is valid for driving
-                merged[key] = val
-            elif key in ("location", "date", "status", "is_abroad") and val:
-                merged[key] = val
+        contents = [{"role": "user", "parts": [{"text": context_prompt}]}]
+        from config import call_vertex_ai
+        response_text = await call_vertex_ai(contents, response_mime_type="application/json")
+        merged = _json.loads(response_text)
         
-        logger.info(f"🔀 Мерж черновиков: {stored_parsed} + {new_parsed} = {merged}")
+        logger.info(f"🔀 Контекстный мерж: {stored_parsed} + '{new_text}' = {merged}")
         
         # Validate merged data
         from app.skills.guardrails import validate_shift_data
@@ -109,11 +113,11 @@ async def handle_clarification_reply(message: types.Message, state: FSMContext):
         
         if errors:
             # Still missing something — ask only the FIRST remaining question
-            question = "⚠️ **Уточните данные смены:**\n• " + errors[0]
+            next_question = errors[0]
+            question_msg = f"⚠️ **Уточните данные смены:**\n• {next_question}"
             await status_msg.delete()
-            await message.answer(question, parse_mode="Markdown")
-            # Update state with merged parsed_data
-            await state.update_data(parsed_data=merged)
+            await message.answer(question_msg, parse_mode="Markdown")
+            await state.update_data(parsed_data=merged, last_question=next_question)
             return
         
         # All good — show draft
@@ -155,13 +159,12 @@ async def run_shift_graph(message: types.Message, raw_text: str, status_msg: typ
         clarification = current_state.get("clarification_question")
         if clarification:
             parsed_data = current_state.get("parsed_data") or {}
+            errors = current_state.get("validation_errors", [])
+            first_question = errors[0] if errors else "Уточните данные смены"
             await status_msg.delete()
-            # Ask only the FIRST question to avoid overwhelming the user
-            first_question = clarification.split("\n")[0] + "\n" + (clarification.split("\n")[1] if "\n" in clarification else "")
-            await message.answer(first_question.strip(), parse_mode="Markdown")
+            await message.answer(f"⚠️ **Уточните данные смены:**\n• {first_question}", parse_mode="Markdown")
             await state.set_state(ShiftValidationState.waiting_for_clarification)
-            # Store current parsed_data for merging, not just raw text
-            await state.update_data(parsed_data=parsed_data)
+            await state.update_data(parsed_data=parsed_data, last_question=first_question)
             return
             
         # 8. All data is valid - show draft
