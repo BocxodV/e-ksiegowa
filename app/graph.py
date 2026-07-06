@@ -85,8 +85,8 @@ builder.add_edge("ask_human", END)
 builder.add_edge("human_review", "saver")
 builder.add_edge("saver", END)
 
-# Compile Graph with Interrupt before human_review and MemorySaver Checkpointer
+# Compile Graph: interrupt ONLY before human_review (ask_human must run to set clarification_question)
 app_graph = builder.compile(
     checkpointer=MemorySaver(),
-    interrupt_before=["ask_human", "human_review"]
+    interrupt_before=["human_review"]
 )

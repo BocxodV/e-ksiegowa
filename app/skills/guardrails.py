@@ -17,14 +17,14 @@ def validate_shift_data(parsed_data: dict) -> list[str]:
     work_val = work_hours if work_hours is not None else 0.0
     driving_val = driving_hours if driving_hours is not None else 0.0
 
-    # Rule 1: Missing fields check for Work status
+    # Rule 1: Missing fields check for Work status (treat None AND 0 as missing)
     if status == "Work":
-        if work_hours is None:
-            errors.append("Не указаны рабочие часы.")
-        if driving_hours is None:
-            errors.append("Не указаны часы вождения (если не было, скажи 0).")
+        if not work_hours:  # catches None, 0, 0.0
+            errors.append("Сколько часов ты отработал?")
+        if driving_hours is None:  # 0 is valid (no driving), but None means not specified
+            errors.append("Сколько часов провёл за рулём? (если не ехал — ответь «0»)")
         if not parsed_data.get("location"):
-            errors.append("Не указан город или объект работы.")
+            errors.append("На каком объекте или в каком городе работал?")
 
     # Rule 2: Negative hours are not allowed
     if work_val < 0:
