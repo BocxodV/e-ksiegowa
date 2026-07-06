@@ -21,14 +21,8 @@ class ShiftValidationState(StatesGroup):
 router = Router()
 logger = logging.getLogger(__name__)
 
-@router.message(F.voice)
-async def handle_voice_shift(message: types.Message):
-    user_id = message.from_user.id
-    profile = await get_user_profile(user_id)
-    t = TRANSLATIONS.get(profile.get("lang", "RUS"), TRANSLATIONS["RUS"])
 
-    status_msg = await message.answer(t.get("voice_status_listening", "🎧 Слушаю и анализирую..."))
-    
+
 async def process_voice_message(message: types.Message, status_msg: types.Message, t: dict) -> str:
     # 1. Download voice message directly into memory
     file_info = await message.bot.get_file(message.voice.file_id)
