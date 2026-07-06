@@ -64,7 +64,7 @@ async def handle_clarification_reply(message: types.Message, state: FSMContext):
         else:
             await status_msg.delete()
             new_text = message.text
-            status_msg = await message.answer("🤖 Обрабатываю...")
+            status_msg = await message.answer(t.get("voice_status_processing", "🤖 Обрабатываю..."))
             
         data = await state.get_data()
         stored_parsed = data.get("parsed_data", {})
@@ -73,14 +73,14 @@ async def handle_clarification_reply(message: types.Message, state: FSMContext):
         # Determine which field the user is answering based on last_question
         last_q_lower = last_question.lower()
         field_to_update = None
-        if "отработал" in last_q_lower:
+        if "отработал" in last_q_lower or "відпрацював" in last_q_lower or "przepracowałeś" in last_q_lower or "work" in last_q_lower:
             field_to_update = "work_hours"
-        elif "за рулём" in last_q_lower or "за рулем" in last_q_lower:
+        elif "за рулём" in last_q_lower or "за рулем" in last_q_lower or "кермом" in last_q_lower or "kierownicą" in last_q_lower or "driving" in last_q_lower:
             field_to_update = "driving_hours"
-        elif "объекте" in last_q_lower or "городе" in last_q_lower:
+        elif "объекте" in last_q_lower or "городе" in last_q_lower or "об'єкті" in last_q_lower or "місті" in last_q_lower or "obiekcie" in last_q_lower or "mieście" in last_q_lower or "location" in last_q_lower or "city" in last_q_lower:
             field_to_update = "location"
             
-        await status_msg.edit_text("🤖 Анализирую ответ...")
+        await status_msg.edit_text(t.get("voice_status_analyzing_reply", "🤖 Анализирую ответ..."))
         
         if field_to_update:
             # Ask LLM to extract JUST this specific field
@@ -112,12 +112,12 @@ Return ONLY a valid JSON object with this single key. Example: {{"{field_to_upda
         
         # Validate merged data
         from app.skills.guardrails import validate_shift_data
-        errors = validate_shift_data(merged)
+        errors = validate_shift_data(merged, t)
         
         if errors:
             # Still missing something — ask only the FIRST remaining question
             next_question = errors[0]
-            question_msg = f"⚠️ **Уточните данные смены:**\n• {next_question}"
+            question_msg = t.get("clarify_shift", "⚠️ **Уточните данные смены:**\n• {question}").format(question=next_question)
             await status_msg.delete()
             await message.answer(question_msg, parse_mode="Markdown")
             await state.update_data(parsed_data=merged, last_question=next_question)
@@ -182,10 +182,15 @@ async def run_shift_graph(message: types.Message, raw_text: str, status_msg: typ
         clarification = current_state.get("clarification_question")
         if clarification:
             parsed_data = current_state.get("parsed_data") or {}
-            errors = current_state.get("validation_errors", [])
-            first_question = errors[0] if errors else "Уточните данные смены"
+            
+            # Re-evaluate errors with correct language dictionary
+            from app.skills.guardrails import validate_shift_data
+            errors = validate_shift_data(parsed_data, t)
+            
+            first_question = errors[0] if errors else t.get("q_work_hours", "Сколько часов ты отработал?")
             await status_msg.delete()
-            await message.answer(f"⚠️ **Уточните данные смены:**\n• {first_question}", parse_mode="Markdown")
+            question_msg = t.get("clarify_shift", "⚠️ **Уточните данные смены:**\n• {question}").format(question=first_question)
+            await message.answer(question_msg, parse_mode="Markdown")
             await state.set_state(ShiftValidationState.waiting_for_clarification)
             await state.update_data(parsed_data=parsed_data, last_question=first_question)
             return

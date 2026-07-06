@@ -2,11 +2,14 @@ import re as _re
 from datetime import datetime as _dt
 
 
-def validate_shift_data(parsed_data: dict) -> list[str]:
+def validate_shift_data(parsed_data: dict, t: dict = None) -> list[str]:
     """
     Validates parsed shift data according to business rules.
     Returns a list of error messages. If there are no errors, returns an empty list.
     """
+    if t is None:
+        t = {}
+        
     errors = []
 
     work_hours = parsed_data.get("work_hours")
@@ -20,11 +23,11 @@ def validate_shift_data(parsed_data: dict) -> list[str]:
     # Rule 1: Missing fields check for Work status (treat None AND 0 as missing)
     if status == "Work":
         if not work_hours:  # catches None, 0, 0.0
-            errors.append("Сколько часов ты отработал?")
+            errors.append(t.get("q_work_hours", "Сколько часов ты отработал?"))
         if driving_hours is None:  # 0 is valid (no driving), but None means not specified
-            errors.append("Сколько часов провёл за рулём? (если не ехал — ответь «0»)")
+            errors.append(t.get("q_driving_hours", "Сколько часов провёл за рулём? (если не ехал — ответь «0»)"))
         if not parsed_data.get("location"):
-            errors.append("На каком объекте или в каком городе работал?")
+            errors.append(t.get("q_location", "На каком объекте или в каком городе работал?"))
 
     # Rule 2: Negative hours are not allowed
     if work_val < 0:

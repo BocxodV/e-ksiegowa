@@ -73,6 +73,12 @@ TRANSLATIONS = {
         "voice_received": "🎙 **Голосовой отчет принят!**\n\n📅 Дата: {date} ({day})\n📍 Локация: {loc}\n🕒 Работа: {hours} ч. | 🚗 За рулем: {drive} ч.\n💰 **На руки: {net:.2f} zł**\n{eur}\n✅ *Смена с учетом налогов и бонусов сохранена в базу!*",
         "voice_error": "⚠️ Ошибка расшифровки: {err}",
         "voice_eur_text": "🌍 Курс NBP: {rate} zł\n",
+        "clarify_shift": "⚠️ **Уточните данные смены:**\n• {question}",
+        "q_work_hours": "Сколько часов ты отработал?",
+        "q_driving_hours": "Сколько часов провёл за рулём? (если не ехал — ответь «0»)",
+        "q_location": "На каком объекте или в каком городе работал?",
+        "voice_status_processing": "🤖 Обрабатываю...",
+        "voice_status_analyzing_reply": "🤖 Анализирую ответ...",
 
         # --- VOICE SHIFT DRAFT & CONFIRMATION ---
         "draft_title": "📝 **Черновик смены:**",
@@ -171,6 +177,12 @@ TRANSLATIONS = {
         "voice_received": "🎙 **Голосовий звіт прийнято!**\n\n📅 Дата: {date} ({day})\n📍 Локація: {loc}\n🕒 Робота: {hours} год. | 🚗 За кермом: {drive} год.\n💰 **На руки: {net:.2f} zł**\n{eur}\n✅ *Зміна з урахуванням податків та бонусів збережена в базу!*",
         "voice_error": "⚠️ Помилка розшифровки: {err}",
         "voice_eur_text": "🌍 Курс NBP: {rate} zł\n",
+        "clarify_shift": "⚠️ **Уточніть дані зміни:**\n• {question}",
+        "q_work_hours": "Скільки годин ти відпрацював?",
+        "q_driving_hours": "Скільки годин провів за кермом? (якщо не їхав — відповідай «0»)",
+        "q_location": "На якому об'єкті або в якому місті працював?",
+        "voice_status_processing": "🤖 Обробляю...",
+        "voice_status_analyzing_reply": "🤖 Аналізую відповідь...",
 
         # --- VOICE SHIFT DRAFT & CONFIRMATION ---
         "draft_title": "📝 **Чернетка зміни:**",
@@ -269,6 +281,12 @@ TRANSLATIONS = {
         "voice_received": "🎙 **Raport głosowy przyjęty!**\n\n📅 Data: {date} ({day})\n📍 Lokalizacja: {loc}\n🕒 Praca: {hours} h | 🚗 Za kierownicą: {drive} h\n💰 **Na rękę: {net:.2f} zł**\n{eur}\n✅ *Zmiana z uwzględnieniem podatków i bonusów została zapisana w bazie!*",
         "voice_error": "⚠️ Błąd rozszyfrowania: {err}",
         "voice_eur_text": "🌍 Kurs NBP: {rate} zł\n",
+        "clarify_shift": "⚠️ **Dopracuj dane zmiany:**\n• {question}",
+        "q_work_hours": "Ile godzin przepracowałeś?",
+        "q_driving_hours": "Ile godzin spędziłeś za kierownicą? (jeśli nie jechałeś — odpowiedz «0»)",
+        "q_location": "Na jakim obiekcie lub w jakim mieście pracowałeś?",
+        "voice_status_processing": "🤖 Przetwarzam...",
+        "voice_status_analyzing_reply": "🤖 Analizuję odpowiedź...",
 
         # --- VOICE SHIFT DRAFT & CONFIRMATION ---
         "draft_title": "📝 **Szkic zmiany:**",
@@ -373,6 +391,12 @@ TRANSLATIONS = {
         "voice_received": "🎙 **Voice report received!**\n\n📅 Date: {date} ({day})\n📍 Location: {loc}\n🕒 Work: {hours} hrs | 🚗 Driving: {drive} hrs\n💰 **Net payout: {net:.2f} zł**\n{eur}\n✅ *Shift with taxes and bonuses has been saved to the database!*",
         "voice_error": "⚠️ Transcription error: {err}",
         "voice_eur_text": "🌍 NBP Exchange Rate: {rate} zł\n",
+        "clarify_shift": "⚠️ **Please clarify the shift details:**\n• {question}",
+        "q_work_hours": "How many hours did you work?",
+        "q_driving_hours": "How many hours did you spend driving? (if none, answer «0»)",
+        "q_location": "At which location or city did you work?",
+        "voice_status_processing": "🤖 Processing...",
+        "voice_status_analyzing_reply": "🤖 Analyzing your reply...",
 
         # --- VOICE SHIFT DRAFT & CONFIRMATION ---
         "draft_title": "📝 **Shift Draft:**",
