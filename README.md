@@ -44,7 +44,8 @@ Payroll edits cannot happen purely autonomously without human sign-off.
 * The bot presents an interactive interface to the worker with clear inline validation options. When the user taps "Confirm (Yes)", the state machine safely resumes from its checkpoint, executing the database write.
 
 ### 3. Isolated Agent Skills
-* **LLM Parser Skill (`app/skills/parser.py`)**: Powered by the lightning-fast `gemini-1.5-flash` model. It utilizes strict `response_mime_type="application/json"` schemas.  
+* **LLM Parser Skill (`app/skills/parser.py`)**: Powered by the lightning-fast `gemini-2.5-flash` model via Google Cloud Vertex AI.
+* **REST API Native Integration**: The agent communicates directly with Vertex AI using raw REST HTTP requests (`aiohttp`) secured by Application Default Credentials (ADC). This eliminates heavy SDK dependencies and API key vulnerabilities, ensuring robust, production-grade latency.
 * **Temporal & Native Prompt Engineering**: The skill injects dynamic `current_date` contexts to resolve relative times ("yesterday", "today") deterministically. It incorporates strict negative constraint prompts to prevent translation or transliteration of proprietary entity names (maintaining absolute precision for strings like *SWISS KRONO* or *Żary*).
 
 ### 4. Multi-Step Guardrails
@@ -61,7 +62,7 @@ Security and data physical limits are strictly enforced inside code nodes rather
 ## 🛠️ Technical Stack
 * **Language**: Python 3.11 (Explicit type hinting, asynchronous architecture)  
 * **Frameworks**: Aiogram 3 (Bot Layer), LangGraph / ADK 2.0 (Orchestration Workflow)  
-* **AI Engine**: Google GenAI SDK (`gemini-3.5-flash` / `gemini-1.5-flash`)  
+* **AI Engine**: Google Cloud Vertex AI REST API (`gemini-2.5-flash`)
 * **Database**: PostgreSQL (Cloud instance via Neon database pooling)  
 * **Telemetry**: LangSmith / Native structured logging  
 * **Deployment**: Docker containerization, Google Cloud Build, Google Cloud Run (Fully serverless container scaling, Webhook event architecture)  
@@ -79,7 +80,7 @@ cd Kasia
 Create a `.env` file in the root folder:
 ```env
 BOT_TOKEN=your_telegram_bot_token
-GEMINI_API_KEY=your_google_ai_studio_api_key
+GOOGLE_APPLICATION_CREDENTIALS=service_account.json
 DATABASE_URL=postgresql://user:pass@host/dbname?sslmode=require
 WEBHOOK_URL=https://your-cloud-run-url.run.app
 LANGCHAIN_TRACING_V2=true
