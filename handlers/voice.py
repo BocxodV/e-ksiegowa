@@ -50,23 +50,6 @@ async def process_voice_message(message: types.Message, status_msg: types.Messag
     transcribed_text = await call_vertex_ai(contents)
     return transcribed_text.strip()
 
-@router.message(F.voice)
-async def handle_voice_shift(message: types.Message, state: FSMContext):
-    user_id = message.from_user.id
-    profile = await get_user_profile(user_id)
-    t = TRANSLATIONS.get(profile.get("lang", "RUS"), TRANSLATIONS["RUS"])
-
-    status_msg = await message.answer(t.get("voice_status_listening", "🎧 Слушаю и анализирую..."))
-    
-    try:
-        transcribed_text = await process_voice_message(message, status_msg, t)
-        logger.info(f"Transcribed voice: '{transcribed_text}'")
-        await run_shift_graph(message, transcribed_text, status_msg, t, state)
-        
-    except Exception as e:
-        logger.error(f"Voice Error: {e}", exc_info=True)
-        await status_msg.edit_text(f"⚠️ Ошибка расшифровки: {str(e)}")
-
 @router.message(ShiftValidationState.waiting_for_clarification, F.text | F.voice)
 async def handle_clarification_reply(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
@@ -147,6 +130,26 @@ Return ONLY a valid JSON object with this single key. Example: {{"{field_to_upda
     except Exception as e:
         logger.error(f"Clarification Error: {e}", exc_info=True)
         await status_msg.edit_text(f"⚠️ Ошибка: {str(e)}")
+
+
+from aiogram.filters import StateFilter
+
+@router.message(StateFilter(None), F.voice)
+async def handle_voice_shift(message: types.Message, state: FSMContext):
+    user_id = message.from_user.id
+    profile = await get_user_profile(user_id)
+    t = TRANSLATIONS.get(profile.get("lang", "RUS"), TRANSLATIONS["RUS"])
+
+    status_msg = await message.answer(t.get("voice_status_listening", "🎧 Слушаю и анализирую..."))
+    
+    try:
+        transcribed_text = await process_voice_message(message, status_msg, t)
+        logger.info(f"Transcribed voice: '{transcribed_text}'")
+        await run_shift_graph(message, transcribed_text, status_msg, t, state)
+        
+    except Exception as e:
+        logger.error(f"Voice Error: {e}", exc_info=True)
+        await status_msg.edit_text(f"⚠️ Ошибка расшифровки: {str(e)}")
 
 async def run_shift_graph(message: types.Message, raw_text: str, status_msg: types.Message, t: dict, state: FSMContext):
     user_id = message.from_user.id
