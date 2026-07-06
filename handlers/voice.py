@@ -12,6 +12,11 @@ from database import get_user_profile, get_pool, increment_shift_count, save_use
 from texts import TRANSLATIONS, get_random_motivation
 from handlers.webapp import build_app_url
 from map_service import get_country_by_city
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.fsm.context import FSMContext
+
+class ShiftValidationState(StatesGroup):
+    waiting_for_clarification = State()
 
 router = Router()
 logger = logging.getLogger(__name__)
@@ -24,44 +29,90 @@ async def handle_voice_shift(message: types.Message):
 
     status_msg = await message.answer(t.get("voice_status_listening", "🎧 Слушаю и анализирую..."))
     
+async def process_voice_message(message: types.Message, status_msg: types.Message, t: dict) -> str:
+    # 1. Download voice message directly into memory
+    file_info = await message.bot.get_file(message.voice.file_id)
+    downloaded_file = await message.bot.download_file(file_info.file_path)
+    audio_bytes = downloaded_file.read()
+    b64_audio = base64.b64encode(audio_bytes).decode('utf-8')
+    
+    # 2. Transcribe voice message using Vertex AI
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    prompt_text = f"""
+    Ты — финансовый AI-ассистент. Твоя единственная задача — прослушать это голосовое сообщение от работника и перевести его в текст (сделать точную транскрипцию). 
+    Верни только текст транскрипции без каких-либо комментариев и введений. 
+    Сегодняшняя дата: {today_str}.
+    """
+    
+    contents = [{
+        "role": "user",
+        "parts": [
+            {"text": prompt_text},
+            {"inlineData": {"mimeType": "audio/ogg", "data": b64_audio}}
+        ]
+    }]
+    
+    await status_msg.edit_text(t.get("voice_status_transcribing", "🧠 Расшифровываю аудио..."))
+    transcribed_text = await call_vertex_ai(contents)
+    return transcribed_text.strip()
+
+@router.message(F.voice)
+async def handle_voice_shift(message: types.Message, state: FSMContext):
+    user_id = message.from_user.id
+    profile = await get_user_profile(user_id)
+    t = TRANSLATIONS.get(profile.get("lang", "RUS"), TRANSLATIONS["RUS"])
+
+    status_msg = await message.answer(t.get("voice_status_listening", "🎧 Слушаю и анализирую..."))
+    
     try:
-        # 1. Download voice message directly into memory
-        file_info = await message.bot.get_file(message.voice.file_id)
-        downloaded_file = await message.bot.download_file(file_info.file_path)
-        audio_bytes = downloaded_file.read()
-        b64_audio = base64.b64encode(audio_bytes).decode('utf-8')
-        
-        # 2. Transcribe voice message using Vertex AI
-        today_str = datetime.now().strftime("%Y-%m-%d")
-        prompt_text = f"""
-        Ты — финансовый AI-ассистент. Твоя единственная задача — прослушать это голосовое сообщение от работника и перевести его в текст (сделать точную транскрипцию). 
-        Верни только текст транскрипции без каких-либо комментариев и введений. 
-        Сегодняшняя дата: {today_str}.
-        """
-        
-        contents = [{
-            "role": "user",
-            "parts": [
-                {"text": prompt_text},
-                {"inlineData": {"mimeType": "audio/ogg", "data": b64_audio}}
-            ]
-        }]
-        
-        await status_msg.edit_text(t.get("voice_status_transcribing", "🧠 Расшифровываю аудио..."))
-        transcribed_text = await call_vertex_ai(contents)
-        transcribed_text = transcribed_text.strip()
+        transcribed_text = await process_voice_message(message, status_msg, t)
         logger.info(f"Transcribed voice: '{transcribed_text}'")
+        await run_shift_graph(message, transcribed_text, status_msg, t, state)
         
+    except Exception as e:
+        logger.error(f"Voice Error: {e}", exc_info=True)
+        await status_msg.edit_text(f"⚠️ Ошибка расшифровки: {str(e)}")
+
+@router.message(ShiftValidationState.waiting_for_clarification, F.text | F.voice)
+async def handle_clarification_reply(message: types.Message, state: FSMContext):
+    user_id = message.from_user.id
+    profile = await get_user_profile(user_id)
+    t = TRANSLATIONS.get(profile.get("lang", "RUS"), TRANSLATIONS["RUS"])
+    
+    status_msg = await message.answer(t.get("voice_status_listening", "🎧 Анализирую дополнение..."))
+    
+    try:
+        if message.voice:
+            new_text = await process_voice_message(message, status_msg, t)
+        else:
+            new_text = message.text
+            
+        data = await state.get_data()
+        previous_raw = data.get("raw_input", "")
+        
+        # Combine previous context with new clarification
+        combined_text = f"{previous_raw}\n\n[Уточнение от пользователя]: {new_text}"
+        await state.clear() # Clear state before running graph
+        await run_shift_graph(message, combined_text, status_msg, t, state)
+        
+    except Exception as e:
+        logger.error(f"Clarification Error: {e}", exc_info=True)
+        await status_msg.edit_text(f"⚠️ Ошибка: {str(e)}")
+
+async def run_shift_graph(message: types.Message, raw_text: str, status_msg: types.Message, t: dict, state: FSMContext):
+    user_id = message.from_user.id
+    try:
         # 3. Setup initial state for LangGraph Agent
         initial_state = AgentState(
-            user_id=message.from_user.id,
-            raw_input=transcribed_text,
+            user_id=user_id,
+            raw_input=raw_text,
             parsed_data=None,
             validation_errors=[],
+            clarification_question=None,
             is_confirmed=False
         )
         
-        # 4. Setup thread config for MemorySaver persistence (unique thread per message)
+        # 4. Setup thread config for MemorySaver persistence
         config = {"configurable": {"thread_id": f"{message.from_user.id}_{message.message_id}"}}
         
         # 5. Run the graph until the human_review interrupt point
@@ -76,12 +127,13 @@ async def handle_voice_shift(message: types.Message):
         current_state = state_snapshot.values
         logger.info(f"⏸️ Граф приостановлен/завершен. Текущее состояние: {current_state}")
         
-        # 7. Check for validation errors
-        errors = current_state.get("validation_errors", [])
-        if errors:
-            error_list = "\n".join(f"• {err}" for err in errors)
+        # 7. Check for validation errors / Clarification needed
+        clarification = current_state.get("clarification_question")
+        if clarification:
             await status_msg.delete()
-            await message.answer(f"⚠️ **Ошибка валидации данных:**\n\n{error_list}", parse_mode="Markdown")
+            await message.answer(clarification, parse_mode="Markdown")
+            await state.set_state(ShiftValidationState.waiting_for_clarification)
+            await state.update_data(raw_input=raw_text)
             return
             
         # 8. Save shift draft to PostgreSQL and send for user confirmation
@@ -112,8 +164,8 @@ async def handle_voice_shift(message: types.Message):
         await message.answer(draft_msg, reply_markup=kb, parse_mode="Markdown")
         
     except Exception as e:
-        logger.error(f"Voice Error: {e}", exc_info=True)
-        await status_msg.edit_text(f"⚠️ Ошибка расшифровки: {str(e)}")
+        logger.error(f"Graph execution Error: {e}", exc_info=True)
+        await status_msg.edit_text(f"⚠️ Системная ошибка: {str(e)}")
 
 @router.callback_query(F.data.startswith("confirm_shift_yes"))
 async def handle_confirm_yes(callback: types.CallbackQuery):

@@ -29,17 +29,28 @@ def node_human_review(state: AgentState):
     """
     pass
 
+def node_ask_human(state: AgentState) -> dict:
+    """
+    If there are validation errors, formats a clarification question to ask the user.
+    """
+    errors = state.get("validation_errors", [])
+    if not errors:
+        return {"clarification_question": None}
+    
+    question = "⚠️ **Уточните данные смены:**\n" + "\n".join(f"• {e}" for e in errors)
+    return {"clarification_question": question}
+
 # Router (Conditional Edge)
 
 def route_after_validation(state: AgentState) -> str:
     """
     Routes the execution path based on validation results:
-    - If errors are present, terminates the graph (returns END).
-    - If no errors, routes to human review (returns "human_review").
+    - If errors are present, routes to ask_human to pause and ask for input.
+    - If no errors, routes to human_review.
     """
     errors = state.get("validation_errors", [])
     if errors:
-        return END
+        return "ask_human"
     return "human_review"
 
 # Graph Assembly
@@ -49,6 +60,7 @@ builder = StateGraph(AgentState)
 # Add Nodes
 builder.add_node("parser", node_parse)
 builder.add_node("validator", node_validate)
+builder.add_node("ask_human", node_ask_human)
 builder.add_node("human_review", node_human_review)
 builder.add_node("saver", save_shift_to_db)
 
@@ -61,10 +73,13 @@ builder.add_conditional_edges(
     "validator",
     route_after_validation,
     {
-        END: END,
+        "ask_human": "ask_human",
         "human_review": "human_review"
     }
 )
+
+# If asking human, we halt execution here (or in human_review). We'll set interrupt_before on ask_human too.
+builder.add_edge("ask_human", END)
 
 # After human review, we proceed to saving in DB, then END
 builder.add_edge("human_review", "saver")
@@ -73,5 +88,5 @@ builder.add_edge("saver", END)
 # Compile Graph with Interrupt before human_review and MemorySaver Checkpointer
 app_graph = builder.compile(
     checkpointer=MemorySaver(),
-    interrupt_before=["human_review"]
+    interrupt_before=["ask_human", "human_review"]
 )

@@ -5,4 +5,5 @@ class AgentState(TypedDict):
     raw_input: str
     parsed_data: Optional[dict]
     validation_errors: list[str]
+    clarification_question: Optional[str]
     is_confirmed: bool
