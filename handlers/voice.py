@@ -111,7 +111,6 @@ async def run_shift_graph(message: types.Message, raw_text: str, status_msg: typ
         
         # 5. Run the graph until the human_review interrupt point
         await status_msg.edit_text(t.get("voice_status_analyzing", "🤖 Анализирую смену с помощью ИИ..."))
-        raw_text = transcribed_text
         logger.info(f"🚀 Запуск графа для пользователя {user_id}. Входной текст: '{raw_text}'")
         async for event in app_graph.astream(initial_state, config=config):
             logger.debug(f"⚙️ Шаг графа: {event}")
@@ -132,7 +131,7 @@ async def run_shift_graph(message: types.Message, raw_text: str, status_msg: typ
             
         # 8. Save shift draft to PostgreSQL and send for user confirmation
         parsed_data = current_state.get("parsed_data") or {}
-        await save_user_draft(message.from_user.id, message.message_id, parsed_data, transcribed_text)
+        await save_user_draft(message.from_user.id, message.message_id, parsed_data, raw_text)
 
         # Use the already fetched translation dictionary
         unk = t["draft_unknown"]
