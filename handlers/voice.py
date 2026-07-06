@@ -87,25 +87,45 @@ async def handle_clarification_reply(message: types.Message, state: FSMContext):
         stored_parsed = data.get("parsed_data", {})
         last_question = data.get("last_question", "")
         
-        # Context-aware update: LLM sees the current draft AND the question that was asked
+        # Determine which field the user is answering based on last_question
+        last_q_lower = last_question.lower()
+        field_to_update = None
+        if "отработал" in last_q_lower:
+            field_to_update = "work_hours"
+        elif "за рулём" in last_q_lower or "за рулем" in last_q_lower:
+            field_to_update = "driving_hours"
+        elif "объекте" in last_q_lower or "городе" in last_q_lower:
+            field_to_update = "location"
+            
         await status_msg.edit_text("🤖 Анализирую ответ...")
-        import json as _json
-        context_prompt = f"""You are updating a work shift record. Here is the current (partially filled) shift data:
-{_json.dumps(stored_parsed, ensure_ascii=False)}
-
-The user was asked: "{last_question}"
-The user's answer: "{new_text}"
-
-Update ONLY the fields that the user answered. Do NOT change fields that were already filled unless the user explicitly changed them.
-Do NOT reset any field to null or 0 unless the user explicitly said so.
-Return the complete updated JSON with all fields: date, work_hours, driving_hours, location, status, is_abroad."""
         
-        contents = [{"role": "user", "parts": [{"text": context_prompt}]}]
-        from config import call_vertex_ai
-        response_text = await call_vertex_ai(contents, response_mime_type="application/json")
-        merged = _json.loads(response_text)
+        if field_to_update:
+            # Ask LLM to extract JUST this specific field
+            extract_prompt = f"""Extract the value for the field '{field_to_update}' from the user's reply: "{new_text}".
+If the field is 'work_hours' or 'driving_hours', return a NUMBER (e.g. 10.5, 0).
+If the field is 'location', return a STRING (e.g. "Warszawa", "Krono").
+Return ONLY a valid JSON object with this single key. Example: {{"{field_to_update}": 10}}"""
+            
+            contents = [{"role": "user", "parts": [{"text": extract_prompt}]}]
+            from config import call_vertex_ai
+            import json as _json
+            response_text = await call_vertex_ai(contents, response_mime_type="application/json")
+            try:
+                extracted = _json.loads(response_text)
+                if field_to_update in extracted:
+                    stored_parsed[field_to_update] = extracted[field_to_update]
+                    logger.info(f"✅ Обновлено поле {field_to_update} -> {extracted[field_to_update]}")
+            except Exception as e:
+                logger.error(f"Failed to extract {field_to_update}: {e}")
+        else:
+            # Fallback if question wasn't recognized
+            from app.skills.parser import parse_shift_text
+            new_parsed = await parse_shift_text(new_text)
+            for k, v in new_parsed.items():
+                if v is not None and v != 0 and v != "":
+                    stored_parsed[k] = v
         
-        logger.info(f"🔀 Контекстный мерж: {stored_parsed} + '{new_text}' = {merged}")
+        merged = stored_parsed
         
         # Validate merged data
         from app.skills.guardrails import validate_shift_data
