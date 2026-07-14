@@ -251,9 +251,10 @@ async def web_app_handler(message: types.Message):
                     if weekday_num == 5: hours_50, hours_100, normal_hours = work_hours, 0, 0 
                     elif weekday_num == 6: hours_50, hours_100, normal_hours = 0, work_hours, 0 
                     else: 
-                        hours_50 = max(0, work_hours - 8)
                         normal_hours = min(8, work_hours)
-                        hours_100 = 0
+                        remaining = max(0, work_hours - 8)
+                        hours_50 = min(2, remaining)
+                        hours_100 = max(0, remaining - 2)
                         
                     base_rate = profile.get("base_rate", 32.0)
                     tax_coeff = profile.get("tax_coeff", 0.71)

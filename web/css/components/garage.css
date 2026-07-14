@@ -41,6 +41,7 @@
     padding: 12px 0;
     border-bottom: 1px dashed var(--hint-ink);
     margin-bottom: 20px;
+    position: relative;
 }
 
 .form-group label {

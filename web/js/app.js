@@ -138,20 +138,55 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function populateDatalist(listId, dataString) {
+    function setupAutocomplete(inputId, listId, dataString) {
+        const inp = document.getElementById(inputId);
         const list = document.getElementById(listId);
-        if (!list || !dataString) return;
-        decodeURIComponent(dataString).split(',').forEach(item => {
-            if (item.trim() !== "") {
-                const option = document.createElement('option');
-                option.value = item;
-                list.appendChild(option);
+        if (!inp || !list || !dataString) return;
+        
+        const arr = decodeURIComponent(dataString).split(',').map(s => s.trim()).filter(s => s !== "");
+        if (arr.length === 0) return;
+
+        function showList(val) {
+            list.innerHTML = '';
+            let hasMatches = false;
+            arr.forEach(item => {
+                if (!val || item.toUpperCase().includes(val.toUpperCase())) {
+                    hasMatches = true;
+                    const div = document.createElement("div");
+                    div.innerHTML = item;
+                    div.addEventListener("click", function(e) {
+                        inp.value = item;
+                        list.style.display = 'none';
+                        // trigger input event so any listeners (like garage sync) fire
+                        inp.dispatchEvent(new Event('input'));
+                    });
+                    list.appendChild(div);
+                }
+            });
+            if (hasMatches) {
+                list.style.display = 'block';
+                setTimeout(() => {
+                    // Slight scroll so the dropdown is fully visible on mobile
+                    list.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 150);
+            } else {
+                list.style.display = 'none';
+            }
+        }
+
+        inp.addEventListener("input", function(e) { showList(this.value); });
+        inp.addEventListener("focus", function() { showList(this.value); });
+        
+        document.addEventListener("click", function (e) {
+            if (e.target !== inp && e.target !== list && !list.contains(e.target)) {
+                list.style.display = 'none';
             }
         });
     }
-    populateDatalist('locationsList', urlParams.get('locs') || "");
-    populateDatalist('carsList', urlParams.get('cars') || "");
-    populateDatalist('garageCarsList', urlParams.get('cars') || "");
+
+    setupAutocomplete('objectInput', 'locationsList', urlParams.get('locs') || "");
+    setupAutocomplete('carInput', 'carsList', urlParams.get('cars') || "");
+    setupAutocomplete('garageCarInput', 'garageCarsList', urlParams.get('cars') || "");
 
     // --- Synchronize vehicles and date properties ---
     const mainCarInput = document.getElementById("carInput");
