@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const list = document.getElementById(listId);
         if (!inp || !list || !dataString) return;
         
-        const arr = decodeURIComponent(dataString).split(',').map(s => s.trim()).filter(s => s !== "");
+        const arr = [...new Set(decodeURIComponent(dataString).split(',').map(s => s.trim()).filter(s => s !== ""))];
         if (arr.length === 0) return;
 
         function showList(val) {
